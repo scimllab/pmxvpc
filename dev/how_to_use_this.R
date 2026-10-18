@@ -1,6 +1,6 @@
 vpc_data <- load_vpc_data(
-  sim_data = "dev/vpc_pkg_sim.csv",
-  obs_data = "dev/vpc_pkg_obs.csv",
+  sim_data = "dev/vpc_sim.csv",
+  obs_data = "dev/vpc_obs.csv",
   
   sim_time = "TIME",
   sim_endpoint = "DV",
@@ -81,7 +81,7 @@ names(result$plots)
 result$groups
 
 ggplot2::ggsave(
-  filename = "vpc_plot.png",
+  filename = paste0("dev/vpc_plot_",names(result$plots),".png"),
   plot = result$plots[[1]],
   width = 8,
   height = 6,
@@ -92,8 +92,8 @@ ggplot2::ggsave(
 
 # Data from load_vpc_data()
 vpc_data <- load_vpc_data(
-  sim_data = "simulated.csv",
-  obs_data = "observed.csv",
+  sim_data = "dev/vpc_sim.csv",
+  obs_data = "dev/vpc_obs.csv",
   sim_time = "TIME",
   sim_endpoint = "DV",
   obs_time = "TIME",
@@ -104,7 +104,7 @@ vpc_data <- load_vpc_data(
 )
 
 # Select the variables to summarize by
-strat_vars <- c("TREATMENT")
+strat_vars <- c("DOSE")
 
 # Dataset overview
 overview <- summarise_vpc_data(
@@ -152,8 +152,8 @@ utils::write.csv(
 
 
 result <- run_vpc_analysis(
-  sim_data = "simulated.csv",
-  obs_data = "observed.csv",
+  sim_data = "dev/vpc_sim.csv",
+  obs_data = "dev/vpc_obs.csv",
   
   sim_time = "TIME",
   sim_endpoint = "DV",
@@ -164,13 +164,13 @@ result <- run_vpc_analysis(
   obs_endpoint = "DV",
   obs_subject = "ID",
   
-  strat_vars = c("TREATMENT"),
+  strat_vars = character(0), #c("DOSE")
   
-  nominal_times = c(0, 1, 2, 4, 8, 24),
+  nominal_times = NULL, #c(0, 1, 2, 4, 8, 24)
   
-  label_sources = list(
-    TREATMENT = "TREATMENT_LABEL"
-  ),
+  # label_sources = list(
+  #   TREATMENT = "TREATMENT_LABEL"
+  # ),
   
   show_codes = TRUE,
   
@@ -193,5 +193,5 @@ result$overview
 result$percentiles
 
 # Export summaries
-write.csv(result$overview, "overview.csv", row.names = FALSE)
-write.csv(result$percentiles, "percentiles.csv", row.names = FALSE)
+write.csv(result$overview, "dev/overview.csv", row.names = FALSE)
+write.csv(result$percentiles, "dev/percentiles.csv", row.names = FALSE)

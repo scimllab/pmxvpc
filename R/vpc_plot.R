@@ -1,3 +1,6 @@
+#' vpc plot
+#' @export
+#'
 vpc_palettes <- list(
   Blue = c(
     fill = "#87CEEB", sim = "#2166AC",

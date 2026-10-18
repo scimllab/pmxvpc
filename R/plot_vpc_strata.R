@@ -32,7 +32,13 @@ plot_vpc_strata <- function(
     )
   }
   
-  available <- data$available_strata %||% character()
+  #available <- data$available_strata %||% character()
+  
+  available <-if (is.null(data$available_strata)) {
+    character()
+  } else {
+    data$available_strata
+  }
   
   unknown <- setdiff(settings$strat_vars, available)
   

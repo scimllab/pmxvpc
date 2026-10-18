@@ -1,3 +1,6 @@
+#' vpc data processing
+#' @export
+#' 
 default_nominal_times <- c(
   0, 1, 2, 3,
   3.92, 4, 4.08, 4.16, 4.25, 4.5, 4.75,
