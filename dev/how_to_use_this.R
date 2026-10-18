@@ -178,10 +178,12 @@ result <- run_vpc_analysis(
     lower_pct = 5,
     upper_pct = 95,
     palette = "Blue",
-    use_bootstrap = FALSE
+    use_bootstrap = FALSE,
+    point_shape = 1,
+    point_color = "green"
+    
   )
 )
-
 
 # Display a plot
 print(result$plots$plots[[1]])
@@ -195,3 +197,9 @@ result$percentiles
 # Export summaries
 write.csv(result$overview, "dev/overview.csv", row.names = FALSE)
 write.csv(result$percentiles, "dev/percentiles.csv", row.names = FALSE)
+
+# "Circle" = 16,
+# "Open circle" = 1,
+# "Triangle" = 17,
+# "Square" = 15,
+# "Plus" = 3

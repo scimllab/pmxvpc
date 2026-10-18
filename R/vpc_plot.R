@@ -192,9 +192,10 @@ make_vpc_plot <- function(
       ggplot2::aes(
         x = Time_Bin,
         ymin = p05_CI_lower,
-        ymax = p05_CI_upper
+        ymax = p05_CI_upper,
+        fill = "Simulated percentile 95% interval"
       ),
-      fill = sim_tail_color,
+      
       alpha = ci_alpha * 0.7
     ) +
     # Central 95% of replicate-specific medians
@@ -203,9 +204,9 @@ make_vpc_plot <- function(
       ggplot2::aes(
         x = Time_Bin,
         ymin = median_CI_lower,
-        ymax = median_CI_upper
+        ymax = median_CI_upper,
+        fill = "Simulated median 95% interval"
       ),
-      fill = sim_median_color,
       alpha = ci_alpha
     ) +
     # Central 95% of replicate-specific P95 values
@@ -214,30 +215,31 @@ make_vpc_plot <- function(
       ggplot2::aes(
         x = Time_Bin,
         ymin = p95_CI_lower,
-        ymax = p95_CI_upper
+        ymax = p95_CI_upper,
+        fill="Simulated percentile 95% interval"
       ),
-      fill = sim_tail_color,
       alpha = ci_alpha * 0.7
     ) +
     ggplot2::geom_line(
       data = sim_sum,
-      ggplot2::aes(x = Time_Bin, y = p05_median),
-      colour = sim_tail_color,
-      linetype = sim_tail_linetype,
+      ggplot2::aes(x = Time_Bin, y = p05_median,
+                   colour = "Simulated percentiles",
+                   linetype = "Simulated percentiles"),
       linewidth = line_width
     ) +
     ggplot2::geom_line(
       data = sim_sum,
-      ggplot2::aes(x = Time_Bin, y = p95_median),
-      colour = sim_tail_color,
-      linetype = sim_tail_linetype,
+      ggplot2::aes(x = Time_Bin, y = p95_median,
+                   colour =  "Simulated percentiles",
+                   linetype = "Simulated percentiles"),
+      
       linewidth = line_width
     ) +
     ggplot2::geom_line(
       data = sim_sum,
-      ggplot2::aes(x = Time_Bin, y = median),
-      colour = sim_median_color,
-      linetype = median_linetype,
+      ggplot2::aes(x = Time_Bin, y = median,
+                   colour =  "Simulated median",
+                   linetype = "Simulated median"),
       linewidth = line_width * 1.2
     )
   
@@ -282,16 +284,16 @@ make_vpc_plot <- function(
   p <- p +
     ggplot2::geom_line(
       data = obs_sum,
-      ggplot2::aes(x = Time_Bin, y = lower),
-      colour = obs_tail_color,
-      linetype = obs_tail_linetype,
+      ggplot2::aes(x = Time_Bin, y = lower,
+                   colour =  "Observed percentiles",
+                   linetype = "Observed percentiles"),
       linewidth = line_width
     ) +
     ggplot2::geom_line(
       data = obs_sum,
-      ggplot2::aes(x = Time_Bin, y = upper),
-      colour = obs_tail_color,
-      linetype = obs_tail_linetype,
+      ggplot2::aes(x = Time_Bin, y = upper,
+                   colour =  "Observed percentiles",
+                   linetype = "Observed percentiles"),
       linewidth = line_width
     )
   
@@ -299,9 +301,9 @@ make_vpc_plot <- function(
   p <- p +
     ggplot2::geom_line(
       data = obs_sum,
-      ggplot2::aes(x = Time_Bin, y = median),
-      colour = obs_median_color,
-      linetype = median_linetype,
+      ggplot2::aes(x = Time_Bin, y = median,
+                   colour =  "Observed median",
+                   linetype = "Observed median"),
       linewidth = line_width * 1.2
     )
   
@@ -310,10 +312,10 @@ make_vpc_plot <- function(
       data = obs_data,
       ggplot2::aes(
         x = .data[[time_col]],
-        y = .data[[endpoint_col]]
+        y = .data[[endpoint_col]],
+        colour =  "Observed concentrations"
       ),
-      colour = point_color,
-      shape = point_shape,
+      shape=point_shape,
       size = point_size,
       alpha = 0.45
     )
@@ -384,5 +386,92 @@ make_vpc_plot <- function(
     p <- p + ggplot2::scale_y_log10()
   }
   
+  legend_labels <- c(
+    "Observed median",
+    "Simulated median",
+    "Observed percentiles",
+    "Simulated percentiles",
+    "Observed concentrations",
+    "Simulated median 95% interval",
+    "Simulated percentile 95% interval"
+  )
+  
+  p <- p +
+    ggplot2::scale_color_manual(
+      name = "",
+      values = c(
+        "Observed median" = obs_median_color,
+        "Simulated median" = sim_median_color,
+        "Observed percentiles" = obs_tail_color,
+        "Simulated percentiles" = sim_tail_color,
+        "Observed concentrations" = point_color
+      ),
+      breaks = legend_labels[1:5],
+      guide = ggplot2::guide_legend(
+        override.aes = list(
+          linetype = c(
+            median_linetype,
+            median_linetype,
+            obs_tail_linetype,
+            sim_tail_linetype,
+            "blank"
+          ),
+          shape = c(NA, NA, NA, NA, point_shape)
+        )
+      )
+    ) +
+    ggplot2::scale_linetype_manual(
+      name = "",
+      values = c(
+        "Observed median" = median_linetype,
+        "Simulated median" = median_linetype,
+        "Observed percentiles" = obs_tail_linetype,
+        "Simulated percentiles" = sim_tail_linetype
+      ),
+      breaks = legend_labels[1:4],
+      guide = "none"
+    ) +
+    ggplot2::scale_fill_manual(
+      name = "",
+      values = c(
+        "Simulated percentile 95% interval" = sim_tail_color,
+        "Simulated median 95% interval" = sim_median_color
+      ),
+      breaks = legend_labels[6:7],
+      guide = ggplot2::guide_legend(
+        order = 2,
+        override.aes = list(
+          alpha = c(ci_alpha, ci_alpha * 0.7),
+          linetype = 0
+        )
+      )
+    )+
+    ggplot2::guides(
+      colour = ggplot2::guide_legend(
+        order = 1,
+        override.aes = list(
+          linetype = c(
+            median_linetype,
+            median_linetype,
+            obs_tail_linetype,
+            sim_tail_linetype,
+            "blank"
+          ),
+          shape = c(NA, NA, NA, NA, point_shape)
+        )
+      ),
+      fill = ggplot2::guide_legend(
+        order = 2,
+        override.aes = list(
+          alpha = c(ci_alpha, ci_alpha * 0.7)
+        )
+      )
+    ) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      legend.box = "vertical",
+      legend.title = ggplot2::element_text(face = "bold"),
+      legend.box.just = "left"
+    )
   p
 }
