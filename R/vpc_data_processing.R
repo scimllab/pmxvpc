@@ -1,6 +1,5 @@
 #' vpc data processing
 #' @export
-#' 
 default_nominal_times <- c(
   0, 1, 2, 3,
   3.92, 4, 4.08, 4.16, 4.25, 4.5, 4.75,
@@ -32,10 +31,9 @@ map_vpc_columns <- function(
     time_is_binned = FALSE,
     data_name = "Data") {
   
-  selected <- c(time_col, endpoint_col, repl_col,subject_col,
+  selected <- c(time_col, endpoint_col, repl_col, subject_col,
                 part_col, treatment_col)
-  selected <- selected[ !is.na(selected) &
-                          nzchar(selected)] #!is.null(selected) &
+  selected <- selected[!is.na(selected) & nzchar(selected)]
   
   missing_cols <- setdiff(selected, names(data))
   
@@ -93,7 +91,8 @@ map_vpc_columns <- function(
   result <- as.data.frame(data)
   
   result$.vpc_time <- data[[time_col]]
-  result$.vpc_endpoint <- endpoint #data[[endpoint_col]]
+  result$.vpc_endpoint <- endpoint
+
   # Add replicate ID only when a replicate column is supplied.
   if (!is.null(repl_col) &&
       length(repl_col) == 1 &&

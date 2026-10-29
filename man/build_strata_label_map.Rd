@@ -14,14 +14,21 @@ build_strata_label_map(
 )
 }
 \arguments{
-\item{variable}{A list returned by vpc_plot_settings().}
+\item{sim}{Prepared simulated data frame.}
 
-\item{data}{A list returned by load_vpc_data(), containing
-sim, obs, and available_strata.}
+\item{obs}{Prepared observed data frame.}
+
+\item{variable}{Name of the numeric stratification variable to label.}
+
+\item{label_source}{Name of a common character or factor variable
+to derive labels from, or NULL to skip.}
+
+\item{manual_labels}{Named character vector of manual code-to-label
+overrides, as returned by \code{parse_manual_strata_labels()}.}
 }
 \value{
-A list containing settings, groups, and a named list of
-  ggplot objects.
+A data frame with \code{code} and \code{label} columns
+  mapping each stratification code to its display label.
 }
 \description{
 Build the mapping between original numeric codes and

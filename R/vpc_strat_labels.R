@@ -1,12 +1,16 @@
 #' Build the mapping between original numeric codes and
 #' user-selected character labels or manually entered labels.
 #'
-#' @param data A list returned by load_vpc_data(), containing
-#'   sim, obs, and available_strata.
-#' @param variable A list returned by vpc_plot_settings().
+#' @param sim Prepared simulated data frame.
+#' @param obs Prepared observed data frame.
+#' @param variable Name of the numeric stratification variable to label.
+#' @param label_source Name of a common character or factor variable
+#'   to derive labels from, or NULL to skip.
+#' @param manual_labels Named character vector of manual code-to-label
+#'   overrides, as returned by \code{parse_manual_strata_labels()}.
 #'
-#' @return A list containing settings, groups, and a named list of
-#'   ggplot objects.
+#' @return A data frame with \code{code} and \code{label} columns
+#'   mapping each stratification code to its display label.
 #' @export
 
 build_strata_label_map <- function(

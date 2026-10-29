@@ -174,15 +174,6 @@ make_vpc_plot <- function(
     )
   }
   
-  print(names(sim_sum))
-  
-  sim_sum |>
-    dplyr::select(
-      Time_Bin, median,
-      median_CI_lower, median_CI_upper
-    ) |>
-    print(n = 20)
-  
   pal <- vpc_palettes[[palette]]
   
   p <- ggplot2::ggplot() +
@@ -243,43 +234,6 @@ make_vpc_plot <- function(
       linewidth = line_width * 1.2
     )
   
-  # Simulated percentile confidence ribbons.
-  # Assumes sim_sum contains the six simulated CI columns.
-  # if (use_bootstrap) {
-  #   p <- p +
-  #     ggplot2::geom_ribbon(
-  #       data = sim_sum,
-  #       ggplot2::aes(
-  #         x = Time_Bin,
-  #         ymin = lower_ci_low,
-  #         ymax = lower_ci_high
-  #       ),
-  #       fill = sim_tail_color,
-  #       alpha = ci_alpha * 0.7
-  #     ) +
-  #     ggplot2::geom_ribbon(
-  #       data = sim_sum,
-  #       ggplot2::aes(
-  #         x = Time_Bin,
-  #         ymin = median_ci_low,
-  #         ymax = median_ci_high
-  #       ),
-  #       fill = sim_median_color,
-  #       alpha = ci_alpha
-  #     ) +
-  #     ggplot2::geom_ribbon(
-  #       data = sim_sum,
-  #       ggplot2::aes(
-  #         x = Time_Bin,
-  #         ymin = upper_ci_low,
-  #         ymax = upper_ci_high
-  #       ),
-  #       fill = sim_tail_color,
-  #       alpha = ci_alpha * 0.7
-  #     )
-  # }
-  
-  
   # Observed P5 and P95: black dashed by default.
   p <- p +
     ggplot2::geom_line(
@@ -338,44 +292,10 @@ make_vpc_plot <- function(
     }
   }
   
-  
-  # if (use_bootstrap) {
-  #   p <- p +
-  #   ggplot2::geom_errorbar(
-  #     data = obs_sum,
-  #     ggplot2::aes(
-  #       x = Time_Bin,
-  #       ymin = lower_ci_low,
-  #       ymax = lower_ci_high
-  #     ),
-  #     colour = pal["obs"],
-  #     width = 0.12,
-  #     alpha = 0.65
-  #   ) +
-  #   ggplot2::geom_errorbar(
-  #     data = obs_sum,
-  #     ggplot2::aes(
-  #       x = Time_Bin,
-  #       ymin = upper_ci_low,
-  #       ymax = upper_ci_high
-  #     ),
-  #     colour = pal["obs"],
-  #     width = 0.12,
-  #     alpha = 0.65
-  #   )
-  #   }
   p<-p +
     ggplot2::labs(
       x = if (nzchar(x_axis_label)) x_axis_label else NULL,
-      y = if (nzchar(y_axis_label)) y_axis_label else NULL,
-      # title = "Visual Predictive Check",
-      # subtitle = paste0(
-      #   "Prediction interval: ",
-      #   prediction_probs[1] * 100, "–",
-      #   prediction_probs[2] * 100,
-      #   "% | Bootstrap confidence: ",
-      #   confidence * 100, "%"
-      # )
+      y = if (nzchar(y_axis_label)) y_axis_label else NULL
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(
