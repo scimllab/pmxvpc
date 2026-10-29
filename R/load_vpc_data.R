@@ -14,9 +14,38 @@
 #' @param obs_time Name of the observed time column.
 #' @param obs_endpoint Name of the observed endpoint/concentration column.
 #' @param obs_subject Name of the observed subject ID column, or NULL.
+#' @param sim_pred Name of the simulated population prediction
+#'   column (e.g. PRED), or NULL. Required for a prediction-corrected
+#'   ("pc") or prediction- and variance-corrected ("pvc") VPC; if the
+#'   named column is missing from the data it is silently ignored
+#'   (treated as not mapped) unless correction is actually requested,
+#'   in which case plotting/summarizing will raise a clear error.
+#' @param obs_pred Name of the observed population prediction
+#'   column, or NULL. Required for a prediction-corrected ("pc") or
+#'   prediction- and variance-corrected ("pvc") VPC; missing columns
+#'   are silently ignored as for \code{sim_pred}. A prediction- and
+#'   variance-corrected ("pvc") VPC also requires \code{sim_repl} to
+#'   be mapped, since the variance reference is derived from the
+#'   scatter of prediction-corrected values across simulated
+#'   replicates (there is no separate predicted-variance column).
 #' @param sim_time_is_binned Whether simulated time is already binned.
+#' @param time_binning Method used to bin the x-axis (time) variable:
+#'   "explicit_center" (nearest-neighbor assignment to a fixed vector
+#'   of bin centers, \code{nominal_times}), "explicit_bound" (group by
+#'   user-supplied interval boundaries, \code{time_bin_breaks}),
+#'   "kmeans" (automatically derive \code{n_time_bins} bin centers via
+#'   1-dimensional k-means clustering), or "none" (use the actual time
+#'   values, unbinned). Defaults to NULL, which auto-selects for
+#'   backward compatibility: "explicit_center" when \code{nominal_times}
+#'   is supplied, otherwise "none".
 #' @param nominal_times Optional numeric vector of nominal sampling times,
 #'   or a comma-separated string. NULL or "" uses actual time values.
+#'   Used when \code{time_binning = "explicit_center"}.
+#' @param time_bin_breaks Optional numeric vector of strictly increasing
+#'   bin boundaries, or a comma-separated string. Required when
+#'   \code{time_binning = "explicit_bound"}.
+#' @param n_time_bins Optional positive integer number of bins. Required
+#'   when \code{time_binning = "kmeans"}.
 #' @param exclude_subjects Optional character vector of subject IDs to
 #'   exclude, or a comma-separated string.
 #'
@@ -26,6 +55,11 @@
 #'   \item{obs}{Prepared observed dataset.}
 #'   \item{available_strata}{Common stratification variables.}
 #'   \item{nominal_times}{Nominal times used, or NULL.}
+#'   \item{time_binning}{Time-binning method actually used.}
+#'   \item{bin_centers}{Resolved bin centers for "explicit_center" or
+#'     "kmeans" binning (kmeans-derived, when applicable), or NULL.}
+#'   \item{time_bin_breaks}{Parsed bin boundaries for "explicit_bound"
+#'     binning, or NULL.}
 #' }
 #' @export
 load_vpc_data <- function(
@@ -38,8 +72,13 @@ load_vpc_data <- function(
     sim_repl = NULL,
     sim_subject = NULL,
     obs_subject = NULL,
+    sim_pred = NULL,
+    obs_pred = NULL,
     sim_time_is_binned = FALSE,
+    time_binning = NULL,
     nominal_times = NULL,
+    time_bin_breaks = NULL,
+    n_time_bins = NULL,
     exclude_subjects = NULL
 ) {
   
@@ -95,7 +134,32 @@ load_vpc_data <- function(
     
     column
   }
-  
+
+  # Unlike validate_column(), a prediction column that is named but
+  # missing from the data is silently skipped (treated as not mapped)
+  # rather than erroring -- these columns are only ever needed when
+  # correction = "pc"/"pvc" is actually requested later via
+  # vpc_plot_settings(), which load_vpc_data() has no visibility into.
+  # If correction is requested without a valid mapped column,
+  # vpc_correction_reference() raises a clear, correction-specific
+  # error at that point instead.
+  validate_pred_column <- function(data, column, label) {
+    if (is.null(column)) {
+      return(NULL)
+    }
+
+    if (!is.character(column) || length(column) != 1L || is.na(column)) {
+      stop(label, " must be a single column name.",
+           call. = FALSE)
+    }
+
+    if (!nzchar(column) || !column %in% names(data)) {
+      return(NULL)
+    }
+
+    column
+  }
+
   sim_time <- validate_column(
     sim, sim_time, "simulated time"
   )
@@ -118,7 +182,10 @@ load_vpc_data <- function(
   obs_subject <- validate_column(
     obs, obs_subject, "observed subject", optional = TRUE
   )
-  
+
+  sim_pred <- validate_pred_column(sim, sim_pred, "simulated prediction")
+  obs_pred <- validate_pred_column(obs, obs_pred, "observed prediction")
+
   # Parse nominal sampling times.
   if (is.character(nominal_times) &&
       length(nominal_times) == 1L &&
@@ -149,7 +216,85 @@ load_vpc_data <- function(
       )
     }
   }
-  
+
+  # Determine the time-binning method. NULL auto-selects for backward
+  # compatibility: nominal_times supplied -> "explicit_center";
+  # nominal_times omitted -> "none" (use actual time values).
+  valid_time_binning <- c(
+    "none", "explicit_center", "explicit_bound", "kmeans"
+  )
+
+  if (is.null(time_binning)) {
+    time_binning <- if (is.null(nominal_times)) "none" else "explicit_center"
+  } else if (!is.character(time_binning) || length(time_binning) != 1L ||
+             is.na(time_binning) || !time_binning %in% valid_time_binning) {
+    stop(
+      "time_binning must be one of: ",
+      paste(valid_time_binning, collapse = ", "), ", or NULL.",
+      call. = FALSE
+    )
+  }
+
+  # Parse explicit bin boundaries.
+  if (is.character(time_bin_breaks) &&
+      length(time_bin_breaks) == 1L &&
+      !is.na(time_bin_breaks)) {
+
+    if (!nzchar(trimws(time_bin_breaks))) {
+      time_bin_breaks <- NULL
+    } else {
+      time_bin_breaks <- trimws(
+        strsplit(time_bin_breaks, ",", fixed = TRUE)[[1]]
+      )
+
+      time_bin_breaks <- suppressWarnings(as.numeric(time_bin_breaks))
+    }
+  }
+
+  if (time_binning == "explicit_center" && is.null(nominal_times)) {
+    stop(
+      "nominal_times must be supplied when time_binning = 'explicit_center'.",
+      call. = FALSE
+    )
+  }
+
+  if (time_binning == "explicit_bound") {
+    if (is.null(time_bin_breaks) ||
+        !is.numeric(time_bin_breaks) ||
+        length(time_bin_breaks) < 2 ||
+        any(!is.finite(time_bin_breaks)) ||
+        is.unsorted(time_bin_breaks, strictly = TRUE)) {
+      stop(
+        "time_bin_breaks must be at least two strictly increasing ",
+        "finite numeric values when time_binning = 'explicit_bound'.",
+        call. = FALSE
+      )
+    }
+  }
+
+  if (time_binning == "kmeans") {
+    if (is.character(n_time_bins) && length(n_time_bins) == 1L &&
+        !is.na(n_time_bins)) {
+      n_time_bins <- suppressWarnings(as.numeric(n_time_bins))
+    }
+
+    if (is.null(n_time_bins) ||
+        !is.numeric(n_time_bins) ||
+        length(n_time_bins) != 1L ||
+        is.na(n_time_bins) ||
+        !is.finite(n_time_bins) ||
+        n_time_bins != as.integer(n_time_bins) ||
+        n_time_bins < 1) {
+      stop(
+        "n_time_bins must be a positive integer when ",
+        "time_binning = 'kmeans'.",
+        call. = FALSE
+      )
+    }
+
+    n_time_bins <- as.integer(n_time_bins)
+  }
+
   # Parse excluded subject IDs.
   if (is.null(exclude_subjects)) {
     exclude_subjects <- character()
@@ -179,48 +324,89 @@ load_vpc_data <- function(
     endpoint_col = sim_endpoint,
     repl_col = sim_repl,
     subject_col = sim_subject,
+    pred_col = sim_pred,
     time_is_binned = isTRUE(sim_time_is_binned),
     data_name = "Simulated data"
   )
-  
+
   obs <- map_vpc_columns(
     obs,
     time_col = obs_time,
     endpoint_col = obs_endpoint,
     repl_col = NULL,
     subject_col = obs_subject,
+    pred_col = obs_pred,
     data_name = "Observed data"
   )
   
-  # Prepare both datasets.
-  #
-  # This retains the original module's preparation behavior:
-  # nominal times supplied -> time_is_binned = FALSE;
-  # nominal times omitted  -> time_is_binned = TRUE.
-  prepare_as_binned <- is.null(nominal_times)
-  
+  # For kmeans binning, derive bin centers once from the pooled sim +
+  # obs time values so both datasets snap to the same bins (running
+  # kmeans separately per dataset would give mismatched centers and
+  # break the sim/obs join on Time_Bin downstream).
+  bin_centers <- NULL
+
+  if (time_binning == "kmeans") {
+    pooled_time <- c(sim$.vpc_time, obs$.vpc_time)
+    pooled_time <- pooled_time[is.finite(pooled_time)]
+
+    if (length(unique(pooled_time)) < n_time_bins) {
+      stop(
+        "Not enough distinct time values (", length(unique(pooled_time)),
+        ") for the requested number of kmeans bins (", n_time_bins, ").",
+        call. = FALSE
+      )
+    }
+
+    # Fix the seed so the same data always yields the same bins:
+    # kmeans() is otherwise sensitive to R's global RNG state even
+    # with nstart > 1, which would make VPC bins non-reproducible.
+    set.seed(123)
+
+    bin_centers <- sort(as.numeric(
+      stats::kmeans(pooled_time, centers = n_time_bins, nstart = 10)$centers
+    ))
+
+    prepare_binning <- "explicit_center"
+    prepare_centers <- bin_centers
+  } else if (time_binning == "explicit_center") {
+    bin_centers <- sort(unique(nominal_times))
+    prepare_binning <- time_binning
+    prepare_centers <- nominal_times
+  } else {
+    prepare_binning <- time_binning
+    prepare_centers <- nominal_times
+  }
+
+  # Prepare both datasets, binning time the same way for sim and obs.
   sim <- prepare_vpc_dataset(
     sim,
-    nominal_times = nominal_times,
-    time_is_binned = prepare_as_binned,
+    time_binning = prepare_binning,
+    nominal_times = prepare_centers,
+    bin_breaks = time_bin_breaks,
+    n_bins = n_time_bins,
     dataset_name = "Simulated data"
   )
-  
+
   obs <- prepare_vpc_dataset(
     obs,
-    nominal_times = nominal_times,
-    time_is_binned = prepare_as_binned,
+    time_binning = prepare_binning,
+    nominal_times = prepare_centers,
+    bin_breaks = time_bin_breaks,
+    n_bins = n_time_bins,
     exclude_subjects = exclude_subjects,
     dataset_name = "Observed data"
   )
-  
+
   # Find common stratification variables.
   strata <- available_strata(sim, obs)
-  
+
   list(
     sim = sim,
     obs = obs,
     available_strata = strata,
-    nominal_times = nominal_times
+    nominal_times = nominal_times,
+    time_binning = time_binning,
+    bin_centers = bin_centers,
+    time_bin_breaks = time_bin_breaks
   )
 }

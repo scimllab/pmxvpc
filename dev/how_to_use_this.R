@@ -151,37 +151,55 @@ utils::write.csv(
 
 
 
+# The observed data has no PRED column, but PRED is a population-only
+# prediction (identical across all 100 REPs for a given ID + TIME in
+# vpc_sim.csv), so the same subjects' PRED can be joined in from the
+# simulated data (REP == 1) by ID + TIME. pvc no longer needs a
+# PREDVAR column -- its variance reference is derived from the
+# scatter of prediction-corrected values across simulated replicates,
+# using sim_repl (see vpc_plot_settings()'s correction/pc_method docs).
+sim_raw <- readr::read_csv("dev/vpc_sim.csv", show_col_types = FALSE)
+obs_raw <- readr::read_csv("dev/vpc_obs.csv", show_col_types = FALSE)
+
+pred_lookup <- unique(sim_raw[sim_raw$REP == 1, c("ID", "TIME", "PRED")])
+obs_raw <- merge(obs_raw, pred_lookup, by = c("ID", "TIME"), all.x = TRUE)
+
+devtools::load_all(quiet = TRUE)
 result <- run_vpc_analysis(
-  sim_data = "dev/vpc_sim.csv",
-  obs_data = "dev/vpc_obs.csv",
-  
+  sim_data = sim_raw,
+  obs_data = obs_raw,
+
   sim_time = "TIME",
   sim_endpoint = "DV",
   sim_repl = "REP",
   sim_subject = "ID",
-  
+
   obs_time = "TIME",
   obs_endpoint = "DV",
   obs_subject = "ID",
-  
+
+  # sim_pred = "PRED",
+  # obs_pred = "PRED",
+
   strat_vars = character(0), #c("DOSE")
-  
+
   nominal_times = NULL, #c(0, 1, 2, 4, 8, 24)
-  
+
   # label_sources = list(
   #   TREATMENT = "TREATMENT_LABEL"
   # ),
-  
+
   show_codes = TRUE,
-  
+
   plot_settings = vpc_plot_settings(
     lower_pct = 5,
     upper_pct = 95,
     palette = "Blue",
     use_bootstrap = FALSE,
     point_shape = 1,
-    point_color = "green"
-    
+    point_color = "green",
+    correction = "none",
+    log_scale = FALSE
   )
 )
 

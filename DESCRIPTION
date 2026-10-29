@@ -11,4 +11,4 @@ Imports:
     ggplot2,
     readr,
     tibble
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

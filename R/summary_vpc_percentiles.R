@@ -8,13 +8,27 @@
 #' @param probs Numeric vector of two probabilities for the lower
 #'   and upper prediction percentiles. Defaults to c(0.05, 0.95).
 #'
+#' @param correction VPC correction method: "none" (default), "pc"
+#'   for a prediction-corrected VPC, or "pvc" for a prediction- and
+#'   variance-corrected VPC. Requires prediction (and, for "pvc",
+#'   prediction variance) columns to be mapped via load_vpc_data().
+#' @param pc_method Rule used to compute the prediction-corrected
+#'   value: "proportional" (default) or "additive". See
+#'   vpc_plot_settings() for details.
+#' @param reference_source Which data the per-bin correction
+#'   reference is computed from: "obs_only" (default) or "pooled".
+#'   See vpc_plot_settings() for details.
+#'
 #' @return A data frame containing stratum values, time bins,
 #'   simulated and observed percentiles, and record counts.
 #' @export
 summarise_vpc_percentiles <- function(
     data,
     strat_vars = character(0),
-    probs = c(0.05, 0.95)
+    probs = c(0.05, 0.95),
+    correction = "none",
+    pc_method = "proportional",
+    reference_source = "obs_only"
 ) {
   
   if (!is.list(data) ||
@@ -39,7 +53,26 @@ summarise_vpc_percentiles <- function(
       call. = FALSE
     )
   }
-  
+
+  if (!is.character(correction) || length(correction) != 1L ||
+      is.na(correction) || !correction %in% c("none", "pc", "pvc")) {
+    stop("correction must be 'none', 'pc', or 'pvc'.", call. = FALSE)
+  }
+
+  if (!is.character(pc_method) || length(pc_method) != 1L ||
+      is.na(pc_method) || !pc_method %in% c("proportional", "additive")) {
+    stop("pc_method must be 'proportional' or 'additive'.", call. = FALSE)
+  }
+
+  if (!is.character(reference_source) || length(reference_source) != 1L ||
+      is.na(reference_source) ||
+      !reference_source %in% c("obs_only", "pooled")) {
+    stop(
+      "reference_source must be 'obs_only' or 'pooled'.",
+      call. = FALSE
+    )
+  }
+
   required_cols <- c(".vpc_endpoint", ".vpc_time_bin")
   
   for (nm in c("sim", "obs")) {
@@ -92,7 +125,25 @@ summarise_vpc_percentiles <- function(
     obs_i <- filter_vpc_stratum(
       data$obs, stratum, strat_vars
     )
-    
+
+    if (!identical(correction, "none")) {
+      reference <- vpc_correction_reference(
+        sim_i, obs_i,
+        correction = correction,
+        pc_method = pc_method,
+        reference_source = reference_source
+      )
+
+      sim_i <- apply_vpc_correction(
+        sim_i, reference, correction, pc_method = pc_method,
+        is_simulated = TRUE
+      )
+      obs_i <- apply_vpc_correction(
+        obs_i, reference, correction, pc_method = pc_method,
+        is_simulated = FALSE
+      )
+    }
+
     sim_sum <- summarise_vpc(
       sim_i,
       probs = probs,

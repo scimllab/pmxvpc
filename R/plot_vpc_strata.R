@@ -39,7 +39,25 @@ plot_vpc_strata <- function(
   } else {
     data$available_strata
   }
-  
+
+  correction <- if (is.null(settings$correction)) {
+    "none"
+  } else {
+    settings$correction
+  }
+
+  pc_method <- if (is.null(settings$pc_method)) {
+    "proportional"
+  } else {
+    settings$pc_method
+  }
+
+  reference_source <- if (is.null(settings$reference_source)) {
+    "obs_only"
+  } else {
+    settings$reference_source
+  }
+
   unknown <- setdiff(settings$strat_vars, available)
   
   if (length(unknown)) {
@@ -98,6 +116,9 @@ plot_vpc_strata <- function(
       B = settings$B,
       use_bootstrap = settings$use_bootstrap,
       color_by = settings$color_by,
+      correction = correction,
+      pc_method = pc_method,
+      reference_source = reference_source,
       obs_median_color = settings$obs_median_color,
       sim_median_color = settings$sim_median_color,
       obs_tail_color = settings$obs_tail_color,

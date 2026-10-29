@@ -39,6 +39,10 @@ make_vpc_plot <- function(
     repl_col = ".vpc_repl",
     color_by = NULL,
     subject_col = ".vpc_subject",
+    correction = "none",
+    pc_method = "proportional",
+    reference_source = "obs_only",
+    pred_col = ".vpc_pred",
     obs_median_color = "#000000",
     sim_median_color = "#2166AC",
     obs_tail_color = "#000000",
@@ -67,7 +71,34 @@ make_vpc_plot <- function(
       !endpoint_col %in% names(obs_data)) {
     stop("The endpoint column is missing.")
   }
-  
+
+  # Rescale endpoints for a prediction-corrected (pcVPC) or
+  # prediction- and variance-corrected (pvcVPC) plot before summarizing.
+  if (!identical(correction, "none")) {
+    reference <- vpc_correction_reference(
+      sim_data, obs_data,
+      correction = correction,
+      pc_method = pc_method,
+      reference_source = reference_source,
+      time_col = time_col,
+      endpoint_col = endpoint_col,
+      pred_col = pred_col,
+      repl_col = repl_col
+    )
+
+    sim_data <- apply_vpc_correction(
+      sim_data, reference, correction, pc_method = pc_method,
+      time_col = time_col, endpoint_col = endpoint_col,
+      pred_col = pred_col, repl_col = repl_col, is_simulated = TRUE
+    )
+
+    obs_data <- apply_vpc_correction(
+      obs_data, reference, correction, pc_method = pc_method,
+      time_col = time_col, endpoint_col = endpoint_col,
+      pred_col = pred_col, is_simulated = FALSE
+    )
+  }
+
   # Keep the source datasets unchanged.
   # Exclude non-positive values only from this log-scale plot.
   if (log_scale) {

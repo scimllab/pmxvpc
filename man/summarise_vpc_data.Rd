@@ -4,13 +4,32 @@
 \alias{summarise_vpc_data}
 \title{Summarise simulated and observed VPC data}
 \usage{
-summarise_vpc_data(data, strat_vars = character(0))
+summarise_vpc_data(
+  data,
+  strat_vars = character(0),
+  correction = "none",
+  pc_method = "proportional",
+  reference_source = "obs_only"
+)
 }
 \arguments{
 \item{data}{A list containing prepared data frames named sim and obs.}
 
 \item{strat_vars}{Character vector of stratification variables.
 Defaults to character(0).}
+
+\item{correction}{VPC correction method: "none" (default), "pc"
+for a prediction-corrected VPC, or "pvc" for a prediction- and
+variance-corrected VPC. Requires prediction (and, for "pvc",
+prediction variance) columns to be mapped via load_vpc_data().}
+
+\item{pc_method}{Rule used to compute the prediction-corrected
+value: "proportional" (default) or "additive". See
+vpc_plot_settings() for details.}
+
+\item{reference_source}{Which data the per-bin correction
+reference is computed from: "obs_only" (default) or "pooled".
+See vpc_plot_settings() for details.}
 }
 \value{
 A data frame with stratum values, dataset name, record count,

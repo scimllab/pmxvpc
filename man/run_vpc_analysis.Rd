@@ -14,8 +14,13 @@ run_vpc_analysis(
   sim_repl = NULL,
   sim_subject = NULL,
   obs_subject = NULL,
+  sim_pred = NULL,
+  obs_pred = NULL,
   sim_time_is_binned = FALSE,
+  time_binning = NULL,
   nominal_times = NULL,
+  time_bin_breaks = NULL,
+  n_time_bins = NULL,
   exclude_subjects = NULL,
   strat_vars = character(0),
   label_sources = list(),
@@ -45,9 +50,32 @@ run_vpc_analysis(
 
 \item{obs_subject}{Optional observed subject ID column.}
 
+\item{sim_pred}{Optional simulated population prediction column.
+Required for a prediction-corrected ("pc") or prediction- and
+variance-corrected ("pvc") VPC; see \code{plot_settings}. If the
+named column is missing from the data it is silently ignored
+unless correction is actually requested.}
+
+\item{obs_pred}{Optional observed population prediction column.
+Missing columns are silently ignored as for \code{sim_pred}. A
+prediction- and variance-corrected ("pvc") VPC also requires
+\code{sim_repl} to be mapped, since the variance reference is
+derived from the scatter of prediction-corrected values across
+simulated replicates.}
+
 \item{sim_time_is_binned}{Whether simulated time is already binned.}
 
+\item{time_binning}{Time-binning method: "explicit_center",
+"explicit_bound", "kmeans", or "none". See load_vpc_data() for
+details; NULL auto-selects based on \code{nominal_times}.}
+
 \item{nominal_times}{Optional nominal sampling times.}
+
+\item{time_bin_breaks}{Optional explicit bin boundaries, used when
+\code{time_binning = "explicit_bound"}.}
+
+\item{n_time_bins}{Optional number of bins, used when
+\code{time_binning = "kmeans"}.}
 
 \item{exclude_subjects}{Optional subject IDs to exclude.}
 
@@ -73,4 +101,10 @@ An object of class "vpc_analysis", containing prepared
 \description{
 Prepare data, configure stratification, generate VPC plots,
 and calculate data overview and percentile summaries.
+}
+\references{
+Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
+visual predictive checks for diagnosing nonlinear mixed-effects
+models. \emph{AAPS J}. 2011;13(2):143-151.
+\doi{10.1208/s12248-011-9255-z}
 }

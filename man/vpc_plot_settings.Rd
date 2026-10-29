@@ -15,6 +15,9 @@ vpc_plot_settings(
   B = 300,
   log_scale = TRUE,
   show_points = TRUE,
+  correction = "none",
+  pc_method = "proportional",
+  reference_source = "obs_only",
   obs_median_color = "#000000",
   sim_median_color = "#2166AC",
   obs_tail_color = "#000000",
@@ -52,6 +55,34 @@ vpc_plot_settings(
 
 \item{show_points}{Display observed concentrations.}
 
+\item{correction}{VPC correction method: "none" (default), "pc"
+for a prediction-corrected VPC, or "pvc" for a prediction- and
+variance-corrected VPC (see Details for the rationale). "pc"
+requires prediction columns to be mapped via load_vpc_data();
+"pvc" also requires a simulated replicate column
+(\code{sim_repl}), since its variance reference is derived from
+the scatter of prediction-corrected values pcY rather than a
+predicted-variance column: a simulated record's denominator is
+the variance of its own replicate's pcY pooled with all observed
+pcY in that bin; bin_var (the shared numerator) is the median of
+those per-replicate pooled variances. An observed record has no
+replicate of its own, so its denominator is the exact value that
+reproduces what you'd get by rescaling it once per replicate and
+taking the median of those results.}
+
+\item{pc_method}{Rule used to compute the prediction-corrected
+value pcY: "proportional" (default), pcY = Y * bin_pred /
+individual_pred, or "additive", pcY = Y - individual_pred +
+bin_pred. Applies to both "pc" and "pvc".}
+
+\item{reference_source}{Which data bin_pred (the per-bin typical
+prediction) is computed from: "obs_only" (default), using only
+observed predictions, or "pooled", using simulated and observed
+predictions combined. Only applies when correction is "pc" or
+"pvc"; for "pvc" the variance reference (bin_var) always uses
+the replicate-based calculation described above, regardless of
+this setting.}
+
 \item{obs_median_color}{Observed median line color.}
 
 \item{sim_median_color}{Simulated median line color.}
@@ -85,4 +116,46 @@ A validated list of plot settings.
 }
 \description{
 Create VPC plot settings
+}
+\section{Why prediction and variance correction}{
+
+A plain VPC compares observed vs. simulated percentiles over time.
+"pc" (prediction-corrected) handles the case where subjects had
+different doses or covariates, by rescaling everyone to what they'd
+look like at the bin's typical prediction (\code{bin_pred}) before
+comparing them.
+
+"pc" does not address a separate problem: the \emph{spread} of
+values can itself be wider or narrower than typical for a bin --
+for example, one simulated replicate's random draw may happen to
+produce a tighter or wider scatter than another replicate purely by
+chance, or residual error may genuinely differ across bins.
+Overlaying raw percentiles in that situation can make a VPC look
+misleadingly wide or narrow for reasons that have nothing to do
+with whether the structural model fits. "pvc" (prediction- and
+variance-corrected) additionally rescales each record's deviation
+from \code{bin_pred} by \code{sqrt(bin_var / individual_var)},
+where \code{bin_var} is the bin's typical spread and
+\code{individual_var} is that specific record's own local spread --
+so a record whose own variability is narrower than typical gets
+stretched outward, and one that's wider gets compressed inward,
+isolating genuine model misfit from expected variability
+differences.
+
+Compare the "pc" and "pvc" versions of the same plot: where they
+look similar, the extra variance correction isn't changing much
+(the data's spread is already consistent across replicates/bins).
+Where they diverge, some of what the plain VPC showed was
+replicate-to-replicate noise rather than model misfit. "pvc" is a
+diagnostic lens for separating those two sources, not a strictly
+"more correct" VPC that should always replace "pc" -- if "pc"
+already answers your diagnostic question, there's no need for the
+extra variance machinery.
+}
+
+\references{
+Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
+visual predictive checks for diagnosing nonlinear mixed-effects
+models. \emph{AAPS J}. 2011;13(2):143-151.
+\doi{10.1208/s12248-011-9255-z}
 }

@@ -7,7 +7,10 @@
 summarise_vpc_percentiles(
   data,
   strat_vars = character(0),
-  probs = c(0.05, 0.95)
+  probs = c(0.05, 0.95),
+  correction = "none",
+  pc_method = "proportional",
+  reference_source = "obs_only"
 )
 }
 \arguments{
@@ -17,6 +20,19 @@ summarise_vpc_percentiles(
 
 \item{probs}{Numeric vector of two probabilities for the lower
   and upper prediction percentiles. Defaults to c(0.05, 0.95).}
+
+\item{correction}{VPC correction method: "none" (default), "pc"
+for a prediction-corrected VPC, or "pvc" for a prediction- and
+variance-corrected VPC. Requires prediction (and, for "pvc",
+prediction variance) columns to be mapped via load_vpc_data().}
+
+\item{pc_method}{Rule used to compute the prediction-corrected
+value: "proportional" (default) or "additive". See
+vpc_plot_settings() for details.}
+
+\item{reference_source}{Which data the per-bin correction
+reference is computed from: "obs_only" (default) or "pooled".
+See vpc_plot_settings() for details.}
 }
 \value{
 A data frame containing stratum values, time bins,

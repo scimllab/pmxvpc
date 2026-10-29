@@ -12,8 +12,26 @@
 #' @param sim_repl Optional simulated replicate column.
 #' @param sim_subject Optional simulated subject ID column.
 #' @param obs_subject Optional observed subject ID column.
+#' @param sim_pred Optional simulated population prediction column.
+#'   Required for a prediction-corrected ("pc") or prediction- and
+#'   variance-corrected ("pvc") VPC; see \code{plot_settings}. If the
+#'   named column is missing from the data it is silently ignored
+#'   unless correction is actually requested.
+#' @param obs_pred Optional observed population prediction column.
+#'   Missing columns are silently ignored as for \code{sim_pred}. A
+#'   prediction- and variance-corrected ("pvc") VPC also requires
+#'   \code{sim_repl} to be mapped, since the variance reference is
+#'   derived from the scatter of prediction-corrected values across
+#'   simulated replicates.
 #' @param sim_time_is_binned Whether simulated time is already binned.
+#' @param time_binning Time-binning method: "explicit_center",
+#'   "explicit_bound", "kmeans", or "none". See load_vpc_data() for
+#'   details; NULL auto-selects based on \code{nominal_times}.
 #' @param nominal_times Optional nominal sampling times.
+#' @param time_bin_breaks Optional explicit bin boundaries, used when
+#'   \code{time_binning = "explicit_bound"}.
+#' @param n_time_bins Optional number of bins, used when
+#'   \code{time_binning = "kmeans"}.
 #' @param exclude_subjects Optional subject IDs to exclude.
 #' @param strat_vars Variables eligible for stratification and plotting.
 #' @param label_sources Optional named list of label-source variables.
@@ -22,6 +40,12 @@
 #' @param plot_settings Optional list returned by vpc_plot_settings().
 #' @param make_plots Whether to generate plots.
 #' @param make_summaries Whether to generate summary tables.
+#'
+#' @references
+#' Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
+#' visual predictive checks for diagnosing nonlinear mixed-effects
+#' models. \emph{AAPS J}. 2011;13(2):143-151.
+#' \doi{10.1208/s12248-011-9255-z}
 #'
 #' @return An object of class "vpc_analysis", containing prepared
 #'   data, stratification configuration, plot settings, plots,
@@ -37,8 +61,13 @@ run_vpc_analysis <- function(
     sim_repl = NULL,
     sim_subject = NULL,
     obs_subject = NULL,
+    sim_pred = NULL,
+    obs_pred = NULL,
     sim_time_is_binned = FALSE,
+    time_binning = NULL,
     nominal_times = NULL,
+    time_bin_breaks = NULL,
+    n_time_bins = NULL,
     exclude_subjects = NULL,
     strat_vars = character(0),
     label_sources = list(),
@@ -60,8 +89,13 @@ run_vpc_analysis <- function(
     sim_repl = sim_repl,
     sim_subject = sim_subject,
     obs_subject = obs_subject,
+    sim_pred = sim_pred,
+    obs_pred = obs_pred,
     sim_time_is_binned = sim_time_is_binned,
+    time_binning = time_binning,
     nominal_times = nominal_times,
+    time_bin_breaks = time_bin_breaks,
+    n_time_bins = n_time_bins,
     exclude_subjects = exclude_subjects
   )
   
@@ -106,15 +140,39 @@ run_vpc_analysis <- function(
   }
   
   if (make_summaries) {
+    correction <- if (is.null(plot_settings$correction)) {
+      "none"
+    } else {
+      plot_settings$correction
+    }
+
+    pc_method <- if (is.null(plot_settings$pc_method)) {
+      "proportional"
+    } else {
+      plot_settings$pc_method
+    }
+
+    reference_source <- if (is.null(plot_settings$reference_source)) {
+      "obs_only"
+    } else {
+      plot_settings$reference_source
+    }
+
     overview <- summarise_vpc_data(
       data = prepared,
-      strat_vars = strat_vars
+      strat_vars = strat_vars,
+      correction = correction,
+      pc_method = pc_method,
+      reference_source = reference_source
     )
-    
+
     percentiles <- summarise_vpc_percentiles(
       data = prepared,
       strat_vars = strat_vars,
-      probs = plot_settings$probs
+      probs = plot_settings$probs,
+      correction = correction,
+      pc_method = pc_method,
+      reference_source = reference_source
     )
   }
   

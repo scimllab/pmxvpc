@@ -26,13 +26,14 @@ map_vpc_columns <- function(
     endpoint_col,
     repl_col = NULL,
     subject_col = NULL,
+    pred_col = NULL,
     part_col = NULL,
     treatment_col = NULL,
     time_is_binned = FALSE,
     data_name = "Data") {
-  
+
   selected <- c(time_col, endpoint_col, repl_col, subject_col,
-                part_col, treatment_col)
+                pred_col, part_col, treatment_col)
   selected <- selected[!is.na(selected) & nzchar(selected)]
   
   missing_cols <- setdiff(selected, names(data))
@@ -104,7 +105,16 @@ map_vpc_columns <- function(
   if (!is.null(subject_col) && nzchar(subject_col)) {
     result$.vpc_subject <- as.character(data[[subject_col]])
   }
-  
+
+  # Population prediction columns used for pcVPC/pvcVPC corrections.
+  if (!is.null(pred_col) && nzchar(pred_col)) {
+    if (!is.numeric(data[[pred_col]])) {
+      stop(data_name, ": the mapped prediction column must be numeric.")
+    }
+
+    result$.vpc_pred <- data[[pred_col]]
+  }
+
   # Standardize optional group columns too, while retaining originals.
   if (!is.null(part_col) && nzchar(part_col)) {
     result$.vpc_part <- data[[part_col]]
@@ -119,51 +129,137 @@ map_vpc_columns <- function(
   result
 }
 
+# Assign each record's time to a bin value using one of four methods:
+#
+# "none":            the bin value is the raw time (no binning).
+# "explicit_center":  nearest-neighbor assignment to a fixed vector of
+#                     bin centers (nominal_times).
+# "explicit_bound":   records are grouped by user-supplied interval
+#                     boundaries (bin_breaks); the bin value is the
+#                     midpoint of the interval each record falls in.
+# "kmeans":           bin centers are found automatically via
+#                     1-dimensional k-means clustering on the time
+#                     values (n_bins clusters), then assigned the
+#                     same way as "explicit_center".
 assign_vpc_time_bins <- function(
     data,
+    method = "explicit_center",
     nominal_times = default_nominal_times,
+    bin_breaks = NULL,
+    n_bins = NULL,
     time_col = ".vpc_time",
     output_col = ".vpc_time_bin") {
-  
+
   if (!time_col %in% names(data)) {
     stop("Time column not found: ", time_col)
   }
-  
+
   if (!is.numeric(data[[time_col]])) {
     stop("Time must be numeric.")
   }
-  
-  if (length(nominal_times) == 0 ||
-      any(!is.finite(nominal_times))) {
-    stop("Nominal times must be finite numeric values.")
+
+  valid_methods <- c("none", "explicit_center", "explicit_bound", "kmeans")
+
+  if (!is.character(method) || length(method) != 1L ||
+      is.na(method) || !method %in% valid_methods) {
+    stop(
+      "method must be one of: ",
+      paste(valid_methods, collapse = ", "), "."
+    )
   }
-  
+
+  if (method == "none") {
+    data[[output_col]] <- data[[time_col]]
+    return(data)
+  }
+
+  if (method == "explicit_bound") {
+    if (length(bin_breaks) < 2 ||
+        !is.numeric(bin_breaks) ||
+        any(!is.finite(bin_breaks)) ||
+        is.unsorted(bin_breaks, strictly = TRUE)) {
+      stop(
+        "bin_breaks must be at least two strictly increasing ",
+        "finite numeric values."
+      )
+    }
+
+    midpoints <- (bin_breaks[-length(bin_breaks)] + bin_breaks[-1]) / 2
+
+    bin_index <- cut(
+      data[[time_col]],
+      breaks = bin_breaks,
+      include.lowest = TRUE,
+      labels = FALSE
+    )
+
+    data[[output_col]] <- midpoints[bin_index]
+    return(data)
+  }
+
+  centers <- if (method == "kmeans") {
+    if (is.null(n_bins) || length(n_bins) != 1L ||
+        is.na(n_bins) || !is.finite(n_bins) ||
+        n_bins != as.integer(n_bins) || n_bins < 1) {
+      stop("n_bins must be a positive integer for kmeans binning.")
+    }
+
+    times <- data[[time_col]][
+      !is.na(data[[time_col]]) & is.finite(data[[time_col]])
+    ]
+
+    if (length(unique(times)) < n_bins) {
+      stop(
+        "Not enough distinct time values (", length(unique(times)),
+        ") for the requested number of kmeans bins (", n_bins, ")."
+      )
+    }
+
+    # Fix the seed so the same data always yields the same bins:
+    # kmeans() is otherwise sensitive to R's global RNG state even
+    # with nstart > 1, which would make VPC bins non-reproducible.
+    set.seed(123)
+
+    sort(as.numeric(
+      stats::kmeans(times, centers = n_bins, nstart = 10)$centers
+    ))
+  } else {
+    if (length(nominal_times) == 0 ||
+        !is.numeric(nominal_times) ||
+        any(!is.finite(nominal_times))) {
+      stop("Nominal times must be finite numeric values.")
+    }
+
+    sort(unique(nominal_times))
+  }
+
   data[[output_col]] <- vapply(
     data[[time_col]],
     function(x) {
       if (is.na(x) || !is.finite(x)) return(NA_real_)
-      
-      nominal_times[
-        which.min(abs(nominal_times - x))
-      ]
+
+      centers[which.min(abs(centers - x))]
     },
     numeric(1)
   )
-  
+
   data
 }
 
 prepare_vpc_dataset <- function(
     data,
+    time_binning = "explicit_center",
     nominal_times = default_nominal_times,
+    bin_breaks = NULL,
+    n_bins = NULL,
     time_is_binned = FALSE,
     exclude_subjects = character(0),
     dataset_name = "Dataset") {
-  
+
   if (!all(vpc_required_internal %in% names(data))) {
     stop("Map the time and endpoint columns before preparing data.")
   }
-  
+
   if (".vpc_subject" %in% names(data) &&
       length(exclude_subjects) > 0) {
     data <- data[
@@ -173,27 +269,319 @@ prepare_vpc_dataset <- function(
       drop = FALSE
     ]
   }
-  
+
   if (time_is_binned) {
     data$.vpc_time_bin <- data$.vpc_time
   } else {
     data <- assign_vpc_time_bins(
       data,
-      nominal_times = nominal_times
+      method = time_binning,
+      nominal_times = nominal_times,
+      bin_breaks = bin_breaks,
+      n_bins = n_bins
     )
   }
-  
+
   data <- data |>
     dplyr::filter(
       !is.na(.vpc_time_bin),
       is.finite(.vpc_endpoint),
       .vpc_endpoint > 0
     )
-  
+
   if (nrow(data) == 0) {
     stop(dataset_name, " has no usable positive endpoint records.")
   }
-  
+
+  data
+}
+
+# Compute the per-bin reference used to rescale endpoints for a
+# prediction-corrected (pcVPC) or prediction- and variance-corrected
+# (pvcVPC) plot or summary.
+#
+# bin_pred: median PRED per bin.
+#   reference_source = "obs_only" (default): observed predictions only.
+#   reference_source = "pooled": simulated and observed predictions
+#     combined. PRED is a population-model quantity (not
+#     residual-driven), so pooling just gives a larger, more stable
+#     sample of the same underlying value; it does not mix genuinely
+#     different populations.
+#
+# For "pvc", the variance reference is derived from the scatter of
+# prediction-corrected values (pcY), not from a predicted-variance
+# column:
+#   - pcY is computed per record using pc_method and bin_pred (the
+#     same pcY that "pc" would produce).
+#   - A simulated record's denominator is the variance of its own
+#     replicate's pcY pooled with the (single) observed pcY set for
+#     that bin: repl_var[r] = var({sim pcY in replicate r} union
+#     {obs pcY in the bin}).
+#   - bin_var (the shared numerator) is the median of repl_var across
+#     all replicates in that bin. This always uses the replicate
+#     structure, independent of reference_source (which only controls
+#     bin_pred).
+#   - An observed record has no replicate of its own, so it uses every
+#     replicate's repl_var in turn and is rescaled once per replicate;
+#     its final corrected value is the median across those R
+#     corrected values. Because the pvc rescaling is an affine
+#     function of sqrt(bin_var / repl_var[r]) for fixed r, and median
+#     commutes with a (per-record) strictly monotonic affine
+#     transform, this is mathematically equivalent to using a single
+#     effective obs_var per bin such that
+#     sqrt(bin_var / obs_var) == median_r(sqrt(bin_var / repl_var[r])).
+#     obs_var is precomputed this way so observed data keeps one row
+#     per observed record (no replicate-level blow-up) while still
+#     getting exactly the median-of-per-replicate-corrections result.
+vpc_correction_reference <- function(
+    sim_data,
+    obs_data,
+    correction = "none",
+    pc_method = "proportional",
+    reference_source = "obs_only",
+    time_col = ".vpc_time_bin",
+    endpoint_col = ".vpc_endpoint",
+    pred_col = ".vpc_pred",
+    repl_col = ".vpc_repl") {
+
+  if (identical(correction, "none")) {
+    return(NULL)
+  }
+
+  if (!correction %in% c("pc", "pvc")) {
+    stop("correction must be one of 'none', 'pc', or 'pvc'.")
+  }
+
+  if (!reference_source %in% c("obs_only", "pooled")) {
+    stop("reference_source must be 'obs_only' or 'pooled'.")
+  }
+
+  if (!pc_method %in% c("proportional", "additive")) {
+    stop("pc_method must be 'proportional' or 'additive'.")
+  }
+
+  require_pred_column <- function(data, col, label, dataset_name) {
+    if (!col %in% names(data)) {
+      stop(
+        dataset_name, " must include a mapped ", label,
+        " column to use a prediction-corrected VPC."
+      )
+    }
+
+    x <- data[[col]]
+
+    if (!is.numeric(x) || any(!is.finite(x) | x <= 0)) {
+      stop(
+        dataset_name, ": the ", label,
+        " column must contain positive finite values."
+      )
+    }
+
+    x
+  }
+
+  if (reference_source == "pooled") {
+    reference_time <- c(sim_data[[time_col]], obs_data[[time_col]])
+    reference_pred <- c(
+      require_pred_column(
+        sim_data, pred_col, "prediction", "Simulated data"
+      ),
+      require_pred_column(
+        obs_data, pred_col, "prediction", "Observed data"
+      )
+    )
+  } else {
+    reference_time <- obs_data[[time_col]]
+    reference_pred <- require_pred_column(
+      obs_data, pred_col, "prediction", "Observed data"
+    )
+  }
+
+  pred <- vapply(
+    split(reference_pred, reference_time),
+    stats::median, numeric(1), na.rm = TRUE
+  )
+
+  if (correction == "pc") {
+    return(list(pred = pred, var = NULL, repl_var = NULL, obs_var = NULL))
+  }
+
+  if (!repl_col %in% names(sim_data)) {
+    stop(
+      "Simulated data must include a mapped replicate column to use ",
+      "a prediction- and variance-corrected VPC."
+    )
+  }
+
+  compute_pcy <- function(data, dataset_name) {
+    indiv_pred <- require_pred_column(
+      data, pred_col, "prediction", dataset_name
+    )
+    bin_pred_i <- pred[as.character(data[[time_col]])]
+
+    if (anyNA(bin_pred_i)) {
+      stop("Every time bin must be present in the correction reference.")
+    }
+
+    endpoint <- data[[endpoint_col]]
+
+    if (pc_method == "proportional") {
+      endpoint * bin_pred_i / indiv_pred
+    } else {
+      endpoint - indiv_pred + bin_pred_i
+    }
+  }
+
+  sim_pcy <- compute_pcy(sim_data, "Simulated data")
+  obs_pcy <- compute_pcy(obs_data, "Observed data")
+
+  sim_bin <- as.character(sim_data[[time_col]])
+  obs_bin <- as.character(obs_data[[time_col]])
+  sim_repl <- as.character(sim_data[[repl_col]])
+
+  group_var <- function(vals) {
+    vals <- vals[is.finite(vals)]
+
+    if (length(vals) < 2) {
+      return(NA_real_)
+    }
+
+    stats::var(vals)
+  }
+
+  bins <- names(pred)
+  bin_var <- stats::setNames(rep(NA_real_, length(bins)), bins)
+  repl_var <- stats::setNames(vector("list", length(bins)), bins)
+  obs_var <- stats::setNames(rep(NA_real_, length(bins)), bins)
+
+  for (b in bins) {
+    obs_vals_b <- obs_pcy[obs_bin == b]
+    sim_idx_b <- which(sim_bin == b)
+
+    if (!length(sim_idx_b)) {
+      stop(
+        "No simulated records found for time bin ", b,
+        " -- cannot compute a variance reference."
+      )
+    }
+
+    repls_b <- unique(sim_repl[sim_idx_b])
+
+    # Each replicate's denominator pools that replicate's own sim pcY
+    # with the observed pcY for this bin.
+    repl_var_b <- vapply(repls_b, function(r) {
+      group_var(c(sim_pcy[sim_idx_b[sim_repl[sim_idx_b] == r]], obs_vals_b))
+    }, numeric(1))
+
+    names(repl_var_b) <- repls_b
+
+    if (all(is.na(repl_var_b))) {
+      stop(
+        "Not enough records to compute a variance reference for ",
+        "time bin ", b, "."
+      )
+    }
+
+    repl_var[[b]] <- repl_var_b
+    bin_var_b <- stats::median(repl_var_b, na.rm = TRUE)
+    bin_var[[b]] <- bin_var_b
+
+    # Collapse the per-replicate corrections observed data would get
+    # into a single effective denominator (see the function-level
+    # comment above for the derivation).
+    valid_repl_var <- repl_var_b[!is.na(repl_var_b)]
+    median_scale <- stats::median(sqrt(bin_var_b / valid_repl_var))
+    obs_var[[b]] <- bin_var_b / median_scale^2
+  }
+
+  list(pred = pred, var = bin_var, repl_var = repl_var, obs_var = obs_var)
+}
+
+# Rescale a dataset's endpoint using the shared bin-level reference
+# from vpc_correction_reference().
+#
+# "pc": the prediction-corrected value (pcY), using either rule:
+#   "proportional": pcY = endpoint * bin_pred / individual_pred
+#   "additive":      pcY = endpoint - individual_pred + bin_pred
+#
+# "pvc": pvcY = (pcY - bin_pred) * sqrt(bin_var / individual_var) + bin_pred
+#   - For simulated records (is_simulated = TRUE), individual_var is
+#     that record's own replicate's (pre-median) variance from
+#     reference$repl_var -- so the ratio compares one replicate's
+#     spread against the typical (median) replicate's spread.
+#   - For observed records, individual_var is reference$obs_var for
+#     that bin -- a single effective denominator, precomputed in
+#     vpc_correction_reference(), that is mathematically equivalent to
+#     correcting each observed record once per simulated replicate
+#     (using that replicate's own repl_var) and taking the median of
+#     the resulting values.
+apply_vpc_correction <- function(
+    data,
+    reference,
+    correction = "none",
+    pc_method = "proportional",
+    time_col = ".vpc_time_bin",
+    endpoint_col = ".vpc_endpoint",
+    pred_col = ".vpc_pred",
+    repl_col = ".vpc_repl",
+    is_simulated = FALSE) {
+
+  if (identical(correction, "none") || is.null(reference)) {
+    return(data)
+  }
+
+  if (!pc_method %in% c("proportional", "additive")) {
+    stop("pc_method must be 'proportional' or 'additive'.")
+  }
+
+  key <- as.character(data[[time_col]])
+  bin_pred <- reference$pred[key]
+
+  if (anyNA(bin_pred)) {
+    stop("Every time bin must be present in the correction reference.")
+  }
+
+  pred <- data[[pred_col]]
+  endpoint <- data[[endpoint_col]]
+
+  pc_y <- if (pc_method == "proportional") {
+    endpoint * bin_pred / pred
+  } else {
+    endpoint - pred + bin_pred
+  }
+
+  if (correction == "pc") {
+    data[[endpoint_col]] <- pc_y
+    return(data)
+  }
+
+  bin_var <- reference$var[key]
+
+  if (is_simulated) {
+    if (!repl_col %in% names(data)) {
+      stop(
+        "Simulated data must include a mapped replicate column to use ",
+        "a prediction- and variance-corrected VPC."
+      )
+    }
+
+    repl_key <- as.character(data[[repl_col]])
+
+    indiv_var <- vapply(seq_along(key), function(i) {
+      rv <- reference$repl_var[[key[i]]]
+      v <- rv[repl_key[i]]
+
+      if (is.null(v) || is.na(v)) bin_var[i] else unname(v)
+    }, numeric(1))
+  } else {
+    obs_var <- reference$obs_var[key]
+
+    indiv_var <- ifelse(is.na(obs_var), bin_var, obs_var)
+  }
+
+  data[[endpoint_col]] <- (pc_y - bin_pred) *
+    sqrt(bin_var / indiv_var) + bin_pred
+
   data
 }
 
@@ -201,7 +589,8 @@ prepare_vpc_dataset <- function(
 available_strata <- function(sim_data, obs_data) {
   excluded <- c(
     ".vpc_time", ".vpc_endpoint", ".vpc_subject",
-    ".vpc_part", ".vpc_treatment", ".vpc_time_bin"
+    ".vpc_part", ".vpc_treatment", ".vpc_time_bin",
+    ".vpc_pred"
   )
   
   intersect(
