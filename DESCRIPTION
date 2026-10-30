@@ -9,6 +9,7 @@ LazyData: true
 Imports:
     dplyr,
     ggplot2,
+    patchwork,
     readr,
     tibble
 Config/roxygen2/version: 8.1.1

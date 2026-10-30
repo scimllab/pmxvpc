@@ -18,6 +18,9 @@
 #' @param reference_source Which data the per-bin correction
 #'   reference is computed from: "obs_only" (default) or "pooled".
 #'   See vpc_plot_settings() for details.
+#' @param save_path Optional file path to save the resulting data
+#'   frame to as CSV (via \code{utils::write.csv()}). NULL (default)
+#'   does not save.
 #'
 #' @return A data frame containing stratum values, time bins,
 #'   simulated and observed percentiles, and record counts.
@@ -28,9 +31,24 @@ summarise_vpc_percentiles <- function(
     probs = c(0.05, 0.95),
     correction = "none",
     pc_method = "proportional",
-    reference_source = "obs_only"
+    reference_source = "obs_only",
+    save_path = NULL
 ) {
-  
+
+  if (!is.null(save_path) &&
+      (!is.character(save_path) || length(save_path) != 1L ||
+       is.na(save_path) || !nzchar(save_path))) {
+    stop("save_path must be a single file path, or NULL.", call. = FALSE)
+  }
+
+  maybe_save <- function(result) {
+    if (!is.null(save_path)) {
+      utils::write.csv(result, save_path, row.names = FALSE)
+    }
+
+    result
+  }
+
   if (!is.list(data) ||
       !is.data.frame(data$sim) ||
       !is.data.frame(data$obs)) {
@@ -109,9 +127,9 @@ summarise_vpc_percentiles <- function(
   )
   
   if (!nrow(strata)) {
-    return(data.frame(
+    return(maybe_save(data.frame(
       Message = "No common stratification combinations found."
-    ))
+    )))
   }
   
   rows <- lapply(seq_len(nrow(strata)), function(i) {
@@ -212,6 +230,6 @@ summarise_vpc_percentiles <- function(
   
   result <- do.call(rbind, rows)
   rownames(result) <- NULL
-  
-  result
+
+  maybe_save(result)
 }

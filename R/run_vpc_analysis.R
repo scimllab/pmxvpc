@@ -40,6 +40,20 @@
 #' @param plot_settings Optional list returned by vpc_plot_settings().
 #' @param make_plots Whether to generate plots.
 #' @param make_summaries Whether to generate summary tables.
+#' @param overview_save_path Optional file path to save the overview
+#'   data frame to as CSV. NULL (default) does not save.
+#' @param percentiles_save_path Optional file path to save the
+#'   percentiles data frame to as CSV. NULL (default) does not save.
+#' @param combined_plot_save_path Optional file path to save a
+#'   combined plot (all strata arranged into one image via
+#'   combine_vpc_plots()) to. NULL (default) does not create or save
+#'   a combined plot. Ignored when \code{make_plots = FALSE}. When
+#'   \code{plots_per_panel} causes more than one page, each page is
+#'   saved with "_page<N>" inserted before the file extension.
+#' @param plots_per_panel Maximum number of stratum panels per
+#'   combined plot, passed to combine_vpc_plots(). NULL (default)
+#'   puts every panel on one combined plot. Only applies when
+#'   \code{combined_plot_save_path} is supplied.
 #'
 #' @references
 #' Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
@@ -48,8 +62,11 @@
 #' \doi{10.1208/s12248-011-9255-z}
 #'
 #' @return An object of class "vpc_analysis", containing prepared
-#'   data, stratification configuration, plot settings, plots,
-#'   overview, and percentile summaries.
+#'   data, stratification configuration, plot settings, plots,
+#'   overview, and percentile summaries, plus a combined_plot entry
+#'   when \code{combined_plot_save_path} is supplied (a single plot,
+#'   or a list of plots if \code{plots_per_panel} produces more than
+#'   one page -- see combine_vpc_plots()).
 #' @export
 run_vpc_analysis <- function(
     sim_data,
@@ -75,7 +92,11 @@ run_vpc_analysis <- function(
     show_codes = TRUE,
     plot_settings = NULL,
     make_plots = TRUE,
-    make_summaries = TRUE
+    make_summaries = TRUE,
+    overview_save_path = NULL,
+    percentiles_save_path = NULL,
+    combined_plot_save_path = NULL,
+    plots_per_panel = NULL
 ) {
   
   # 1. Load and prepare datasets.
@@ -131,12 +152,21 @@ run_vpc_analysis <- function(
   plots <- NULL
   overview <- NULL
   percentiles <- NULL
-  
+  combined_plot <- NULL
+
   if (make_plots) {
     plots <- plot_vpc_strata(
       data = prepared,
       settings = plot_settings
     )
+
+    if (!is.null(combined_plot_save_path)) {
+      combined_plot <- combine_vpc_plots(
+        plots,
+        plots_per_panel = plots_per_panel,
+        save_path = combined_plot_save_path
+      )
+    }
   }
   
   if (make_summaries) {
@@ -163,7 +193,8 @@ run_vpc_analysis <- function(
       strat_vars = strat_vars,
       correction = correction,
       pc_method = pc_method,
-      reference_source = reference_source
+      reference_source = reference_source,
+      save_path = overview_save_path
     )
 
     percentiles <- summarise_vpc_percentiles(
@@ -172,10 +203,11 @@ run_vpc_analysis <- function(
       probs = plot_settings$probs,
       correction = correction,
       pc_method = pc_method,
-      reference_source = reference_source
+      reference_source = reference_source,
+      save_path = percentiles_save_path
     )
   }
-  
+
   structure(
     list(
       data = prepared,
@@ -183,7 +215,8 @@ run_vpc_analysis <- function(
       plot_settings = plot_settings,
       plots = plots,
       overview = overview,
-      percentiles = percentiles
+      percentiles = percentiles,
+      combined_plot = combined_plot
     ),
     class = "vpc_analysis"
   )

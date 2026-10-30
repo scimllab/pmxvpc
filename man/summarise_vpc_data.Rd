@@ -9,7 +9,8 @@ summarise_vpc_data(
   strat_vars = character(0),
   correction = "none",
   pc_method = "proportional",
-  reference_source = "obs_only"
+  reference_source = "obs_only",
+  save_path = NULL
 )
 }
 \arguments{
@@ -30,6 +31,10 @@ vpc_plot_settings() for details.}
 \item{reference_source}{Which data the per-bin correction
 reference is computed from: "obs_only" (default) or "pooled".
 See vpc_plot_settings() for details.}
+
+\item{save_path}{Optional file path to save the resulting data
+frame to as CSV (via \code{utils::write.csv()}). NULL (default)
+does not save.}
 }
 \value{
 A data frame with stratum values, dataset name, record count,

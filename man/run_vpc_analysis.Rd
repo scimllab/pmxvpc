@@ -28,7 +28,11 @@ run_vpc_analysis(
   show_codes = TRUE,
   plot_settings = NULL,
   make_plots = TRUE,
-  make_summaries = TRUE
+  make_summaries = TRUE,
+  overview_save_path = NULL,
+  percentiles_save_path = NULL,
+  combined_plot_save_path = NULL,
+  plots_per_panel = NULL
 )
 }
 \arguments{
@@ -92,11 +96,32 @@ details; NULL auto-selects based on \code{nominal_times}.}
 \item{make_plots}{Whether to generate plots.}
 
 \item{make_summaries}{Whether to generate summary tables.}
+
+\item{overview_save_path}{Optional file path to save the overview
+data frame to as CSV. NULL (default) does not save.}
+
+\item{percentiles_save_path}{Optional file path to save the
+percentiles data frame to as CSV. NULL (default) does not save.}
+
+\item{combined_plot_save_path}{Optional file path to save a
+combined plot (all strata arranged into one image via
+combine_vpc_plots()) to. NULL (default) does not create or save
+a combined plot. Ignored when \code{make_plots = FALSE}. When
+\code{plots_per_panel} causes more than one page, each page is
+saved with "_page<N>" inserted before the file extension.}
+
+\item{plots_per_panel}{Maximum number of stratum panels per
+combined plot, passed to combine_vpc_plots(). NULL (default)
+puts every panel on one combined plot. Only applies when
+\code{combined_plot_save_path} is supplied.}
 }
 \value{
 An object of class "vpc_analysis", containing prepared
-  data, stratification configuration, plot settings, plots,
-  overview, and percentile summaries.
+  data, stratification configuration, plot settings, plots,
+  overview, and percentile summaries, plus a combined_plot entry
+  when \code{combined_plot_save_path} is supplied (a single plot,
+  or a list of plots if \code{plots_per_panel} produces more than
+  one page -- see combine_vpc_plots()).
 }
 \description{
 Prepare data, configure stratification, generate VPC plots,

@@ -17,6 +17,9 @@
 #' @param reference_source Which data the per-bin correction
 #'   reference is computed from: "obs_only" (default) or "pooled".
 #'   See vpc_plot_settings() for details.
+#' @param save_path Optional file path to save the resulting data
+#'   frame to as CSV (via \code{utils::write.csv()}). NULL (default)
+#'   does not save.
 #'
 #' @return A data frame with stratum values, dataset name, record count,
 #'   subject count, time-bin count, descriptive statistics, and
@@ -27,9 +30,24 @@ summarise_vpc_data <- function(
     strat_vars = character(0),
     correction = "none",
     pc_method = "proportional",
-    reference_source = "obs_only"
+    reference_source = "obs_only",
+    save_path = NULL
 ) {
-  
+
+  if (!is.null(save_path) &&
+      (!is.character(save_path) || length(save_path) != 1L ||
+       is.na(save_path) || !nzchar(save_path))) {
+    stop("save_path must be a single file path, or NULL.", call. = FALSE)
+  }
+
+  maybe_save <- function(result) {
+    if (!is.null(save_path)) {
+      utils::write.csv(result, save_path, row.names = FALSE)
+    }
+
+    result
+  }
+
   if (!is.list(data) ||
       !is.data.frame(data$sim) ||
       !is.data.frame(data$obs)) {
@@ -99,9 +117,9 @@ summarise_vpc_data <- function(
   )
   
   if (!nrow(strata)) {
-    return(data.frame(
+    return(maybe_save(data.frame(
       Message = "No common stratification combinations found."
-    ))
+    )))
   }
   
   summarise_one_dataset <- function(
@@ -200,6 +218,6 @@ summarise_vpc_data <- function(
   
   result <- do.call(rbind, rows)
   rownames(result) <- NULL
-  
-  result
+
+  maybe_save(result)
 }

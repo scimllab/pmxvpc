@@ -161,7 +161,7 @@ utils::write.csv(
 sim_raw <- readr::read_csv("dev/vpc_sim.csv", show_col_types = FALSE)
 obs_raw <- readr::read_csv("dev/vpc_obs.csv", show_col_types = FALSE)
 
-pred_lookup <- unique(sim_raw[sim_raw$REP == 1, c("ID", "TIME", "PRED")])
+pred_lookup <- unique(sim_raw[sim_raw$REP == 2, c("ID", "TIME", "PRED")])
 obs_raw <- merge(obs_raw, pred_lookup, by = c("ID", "TIME"), all.x = TRUE)
 
 devtools::load_all(quiet = TRUE)
@@ -178,12 +178,14 @@ result <- run_vpc_analysis(
   obs_endpoint = "DV",
   obs_subject = "ID",
 
-  # sim_pred = "PRED",
-  # obs_pred = "PRED",
+  sim_pred = "PRED",
+  obs_pred = "PRED",
 
   strat_vars = character(0), #c("DOSE")
 
-  nominal_times = NULL, #c(0, 1, 2, 4, 8, 24)
+  nominal_times = NULL, #c(0, 1, 2, 4, 8, 24),
+  time_binning ="none",
+  # n_time_bins = 10,
 
   # label_sources = list(
   #   TREATMENT = "TREATMENT_LABEL"
@@ -198,8 +200,9 @@ result <- run_vpc_analysis(
     use_bootstrap = FALSE,
     point_shape = 1,
     point_color = "green",
-    correction = "none",
-    log_scale = FALSE
+    correction = "pc",
+    
+    log_scale = TRUE
   )
 )
 
