@@ -24,6 +24,25 @@ vpc_palettes <- list(
   )
 )
 
+# A legend key_glyph factory: draws a translucent rectangle behind the
+# usual line icon, so a simulated median/percentile line and its CI
+# ribbon render as one combined legend key instead of two separate
+# entries. Attached directly to specific geom_line() layers via their
+# `key_glyph` argument -- deterministic, unlike relying on ggplot's
+# automatic colour/fill guide merging (which only merges when both
+# scales' breaks sets are identical, and otherwise picks an arbitrary
+# layer's glyph to represent the merged key).
+vpc_combo_key_glyph <- function(fill_colour, fill_alpha) {
+  function(data, params, size) {
+    rect <- grid::rectGrob(
+      width = grid::unit(1, "npc"),
+      height = grid::unit(1, "npc"),
+      gp = grid::gpar(fill = fill_colour, alpha = fill_alpha, col = NA)
+    )
+    grid::grobTree(rect, ggplot2::draw_key_path(data, params, size))
+  }
+}
+
 make_vpc_plot <- function(
     sim_data,
     obs_data,
@@ -46,9 +65,9 @@ make_vpc_plot <- function(
     obs_median_color = "#000000",
     sim_median_color = "#2166AC",
     obs_tail_color = "#000000",
-    sim_tail_color = "#D73027",
+    sim_tail_color = "#4393C3",
     median_linetype = "solid",
-    obs_tail_linetype = "dashed",
+    obs_tail_linetype = "dotted",
     sim_tail_linetype = "solid",
     point_color = "#333333",
     point_shape = 16,
@@ -215,9 +234,9 @@ make_vpc_plot <- function(
         x = Time_Bin,
         ymin = p05_CI_lower,
         ymax = p05_CI_upper,
-        fill = "Simulated percentile 95% interval"
+        fill = "Simulated percentiles"
       ),
-      
+
       alpha = ci_alpha * 0.7
     ) +
     # Central 95% of replicate-specific medians
@@ -227,7 +246,7 @@ make_vpc_plot <- function(
         x = Time_Bin,
         ymin = median_CI_lower,
         ymax = median_CI_upper,
-        fill = "Simulated median 95% interval"
+        fill = "Simulated median"
       ),
       alpha = ci_alpha
     ) +
@@ -238,7 +257,7 @@ make_vpc_plot <- function(
         x = Time_Bin,
         ymin = p95_CI_lower,
         ymax = p95_CI_upper,
-        fill="Simulated percentile 95% interval"
+        fill = "Simulated percentiles"
       ),
       alpha = ci_alpha * 0.7
     ) +
@@ -247,22 +266,25 @@ make_vpc_plot <- function(
       ggplot2::aes(x = Time_Bin, y = p05_median,
                    colour = "Simulated percentiles",
                    linetype = "Simulated percentiles"),
-      linewidth = line_width
+      linewidth = line_width,
+      key_glyph = vpc_combo_key_glyph(sim_tail_color, ci_alpha * 0.7)
     ) +
     ggplot2::geom_line(
       data = sim_sum,
       ggplot2::aes(x = Time_Bin, y = p95_median,
                    colour =  "Simulated percentiles",
                    linetype = "Simulated percentiles"),
-      
-      linewidth = line_width
+
+      linewidth = line_width,
+      key_glyph = vpc_combo_key_glyph(sim_tail_color, ci_alpha * 0.7)
     ) +
     ggplot2::geom_line(
       data = sim_sum,
       ggplot2::aes(x = Time_Bin, y = median,
                    colour =  "Simulated median",
                    linetype = "Simulated median"),
-      linewidth = line_width * 1.2
+      linewidth = line_width * 1.2,
+      key_glyph = vpc_combo_key_glyph(sim_median_color, ci_alpha)
     )
   
   # Observed P5 and P95: black dashed by default.
@@ -291,7 +313,7 @@ make_vpc_plot <- function(
                    linetype = "Observed median"),
       linewidth = line_width * 1.2
     )
-  
+
   if (show_points) {
     p<-p+ggplot2::geom_point(
       data = obs_data,
@@ -305,7 +327,7 @@ make_vpc_plot <- function(
       alpha = 0.45
     )
   }
-  
+
   # Ensure the observed median column has a consistent name.
   if (!"median" %in% names(obs_sum)) {
     median_col <- intersect(
@@ -339,35 +361,40 @@ make_vpc_plot <- function(
   
   legend_labels <- c(
     "Observed median",
-    "Simulated median",
     "Observed percentiles",
-    "Simulated percentiles",
     "Observed concentrations",
-    "Simulated median 95% interval",
-    "Simulated percentile 95% interval"
+    "Simulated median",
+    "Simulated percentiles"
   )
-  
+
+  # The simulated median/percentile lines carry a custom key_glyph
+  # (vpc_combo_key_glyph(), attached where those geom_line() layers are
+  # added above) that draws their CI ribbon's shade behind the line icon,
+  # so each shows as one combined legend key. The fill scale below still
+  # colors the actual ribbons on the plot, but contributes no legend of
+  # its own (guide = "none").
   p <- p +
     ggplot2::scale_color_manual(
       name = "",
       values = c(
         "Observed median" = obs_median_color,
-        "Simulated median" = sim_median_color,
         "Observed percentiles" = obs_tail_color,
-        "Simulated percentiles" = sim_tail_color,
-        "Observed concentrations" = point_color
+        "Observed concentrations" = point_color,
+        "Simulated median" = sim_median_color,
+        "Simulated percentiles" = sim_tail_color
       ),
-      breaks = legend_labels[1:5],
+      breaks = legend_labels,
       guide = ggplot2::guide_legend(
+        nrow = 2, ncol = 3, byrow = TRUE,
         override.aes = list(
           linetype = c(
             median_linetype,
-            median_linetype,
             obs_tail_linetype,
-            sim_tail_linetype,
-            "blank"
+            "blank",
+            median_linetype,
+            sim_tail_linetype
           ),
-          shape = c(NA, NA, NA, NA, point_shape)
+          shape = c(NA, NA, point_shape, NA, NA)
         )
       )
     ) +
@@ -375,54 +402,27 @@ make_vpc_plot <- function(
       name = "",
       values = c(
         "Observed median" = median_linetype,
-        "Simulated median" = median_linetype,
         "Observed percentiles" = obs_tail_linetype,
+        "Simulated median" = median_linetype,
         "Simulated percentiles" = sim_tail_linetype
       ),
-      breaks = legend_labels[1:4],
+      breaks = c(
+        "Observed median", "Observed percentiles",
+        "Simulated median", "Simulated percentiles"
+      ),
       guide = "none"
     ) +
     ggplot2::scale_fill_manual(
       name = "",
       values = c(
-        "Simulated percentile 95% interval" = sim_tail_color,
-        "Simulated median 95% interval" = sim_median_color
+        "Simulated median" = sim_median_color,
+        "Simulated percentiles" = sim_tail_color
       ),
-      breaks = legend_labels[6:7],
-      guide = ggplot2::guide_legend(
-        order = 2,
-        override.aes = list(
-          alpha = c(ci_alpha, ci_alpha * 0.7),
-          linetype = 0
-        )
-      )
-    )+
-    ggplot2::guides(
-      colour = ggplot2::guide_legend(
-        order = 1,
-        override.aes = list(
-          linetype = c(
-            median_linetype,
-            median_linetype,
-            obs_tail_linetype,
-            sim_tail_linetype,
-            "blank"
-          ),
-          shape = c(NA, NA, NA, NA, point_shape)
-        )
-      ),
-      fill = ggplot2::guide_legend(
-        order = 2,
-        override.aes = list(
-          alpha = c(ci_alpha, ci_alpha * 0.7)
-        )
-      )
+      guide = "none"
     ) +
     ggplot2::theme(
       legend.position = "bottom",
-      legend.box = "vertical",
-      legend.title = ggplot2::element_text(face = "bold"),
-      legend.box.just = "left"
+      legend.title = ggplot2::element_text(face = "bold")
     )
   p
 }

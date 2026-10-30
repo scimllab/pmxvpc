@@ -24,8 +24,9 @@ summarise_vpc_percentiles(
 
 \item{correction}{VPC correction method: "none" (default), "pc"
 for a prediction-corrected VPC, or "pvc" for a prediction- and
-variance-corrected VPC. Requires prediction (and, for "pvc",
-prediction variance) columns to be mapped via load_vpc_data().}
+variance-corrected VPC. Requires prediction columns to be mapped
+via load_vpc_data(); "pvc" also requires a simulated replicate
+column (sim_repl). See vpc_plot_settings() for details.}
 
 \item{pc_method}{Rule used to compute the prediction-corrected
 value: "proportional" (default) or "additive". See

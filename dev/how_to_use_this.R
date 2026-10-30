@@ -196,11 +196,11 @@ result <- run_vpc_analysis(
   plot_settings = vpc_plot_settings(
     lower_pct = 5,
     upper_pct = 95,
-    palette = "Blue",
-    use_bootstrap = FALSE,
-    point_shape = 1,
-    point_color = "green",
-    correction = "pc",
+    # palette = "Blue",
+    # use_bootstrap = FALSE,
+    # point_shape = 1,
+    # point_color = "black",
+    # correction = "pc",
     
     log_scale = TRUE
   )
