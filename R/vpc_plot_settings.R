@@ -91,6 +91,17 @@
 #' visual predictive checks for diagnosing nonlinear mixed-effects
 #' models. \emph{AAPS J}. 2011;13(2):143-151.
 #' \doi{10.1208/s12248-011-9255-z}
+#'
+#' @examples
+#' settings <- vpc_plot_settings(strat_vars = "DOSE", log_scale = TRUE)
+#' settings$palette
+#'
+#' # A prediction- and variance-corrected (pvcVPC) configuration.
+#' settings_pvc <- vpc_plot_settings(
+#'   strat_vars = "DOSE",
+#'   correction = "pvc",
+#'   pc_method = "proportional"
+#' )
 #' @export
 vpc_plot_settings <- function(
     strat_vars = character(),

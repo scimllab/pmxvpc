@@ -19,3 +19,21 @@ A list containing settings, groups, and a named list of
 \description{
 Generate VPC plots for all strata
 }
+\examples{
+data <- load_vpc_data(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+)
+settings <- vpc_plot_settings(strat_vars = "DOSE")
+plots <- plot_vpc_strata(data, settings)
+names(plots$plots)
+plots$plots[[1]]
+}

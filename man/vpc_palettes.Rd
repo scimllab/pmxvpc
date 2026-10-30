@@ -2,10 +2,17 @@
 % Please edit documentation in R/vpc_plot.R
 \name{vpc_palettes}
 \alias{vpc_palettes}
-\title{vpc plot}
+\title{Named color palettes for VPC plots}
 \usage{
 vpc_palettes
 }
 \description{
-vpc plot
+Built-in color palettes selectable via the \code{palette} argument of
+\code{\link{vpc_plot_settings}}. Each entry is a named character
+vector of hex colors for the ribbon fill, simulated and observed
+series, and observed points.
+}
+\examples{
+names(vpc_palettes)
+vpc_palettes[["Okabe-Ito"]]
 }

@@ -127,6 +127,23 @@ An object of class "vpc_analysis", containing prepared
 Prepare data, configure stratification, generate VPC plots,
 and calculate data overview and percentile summaries.
 }
+\examples{
+result <- run_vpc_analysis(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24),
+  strat_vars = "DOSE"
+)
+result$overview
+result$plots$plots[[1]]
+}
 \references{
 Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
 visual predictive checks for diagnosing nonlinear mixed-effects

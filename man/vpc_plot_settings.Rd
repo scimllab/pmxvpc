@@ -153,6 +153,17 @@ already answers your diagnostic question, there's no need for the
 extra variance machinery.
 }
 
+\examples{
+settings <- vpc_plot_settings(strat_vars = "DOSE", log_scale = TRUE)
+settings$palette
+
+# A prediction- and variance-corrected (pvcVPC) configuration.
+settings_pvc <- vpc_plot_settings(
+  strat_vars = "DOSE",
+  correction = "pvc",
+  pc_method = "proportional"
+)
+}
 \references{
 Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
 visual predictive checks for diagnosing nonlinear mixed-effects

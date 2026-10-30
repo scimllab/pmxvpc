@@ -34,3 +34,20 @@ A data frame with \code{code} and \code{label} columns
 Build the mapping between original numeric codes and
 user-selected character labels or manually entered labels.
 }
+\examples{
+data <- load_vpc_data(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+)
+build_strata_label_map(
+  sim = data$sim,
+  obs = data$obs,
+  variable = "DOSE",
+  manual_labels = c(`100` = "Low dose", `300` = "High dose")
+)
+}

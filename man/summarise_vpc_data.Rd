@@ -46,3 +46,18 @@ A data frame with stratum values, dataset name, record count,
 Produce a dataset overview for every common stratification
 combination.
 }
+\examples{
+data <- load_vpc_data(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+)
+summarise_vpc_data(data, strat_vars = "DOSE")
+}

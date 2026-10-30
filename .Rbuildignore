@@ -1,2 +1,12 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^LICENSE\.md$
+^dev$
+^CLAUDE\.md$
+^\.claude$
+^\.Rhistory$
+^data-raw$
+^\.git$
+^\.gitignore$
+^Rplots\.pdf$
+

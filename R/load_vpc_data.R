@@ -61,6 +61,21 @@
 #'   \item{time_bin_breaks}{Parsed bin boundaries for "explicit_bound"
 #'     binning, or NULL.}
 #' }
+#'
+#' @examples
+#' data <- load_vpc_data(
+#'   sim_data = pmxvpc_sim_example,
+#'   obs_data = pmxvpc_obs_example,
+#'   sim_time = "TIME",
+#'   sim_endpoint = "DV",
+#'   obs_time = "TIME",
+#'   obs_endpoint = "DV",
+#'   sim_repl = "REP",
+#'   sim_subject = "ID",
+#'   obs_subject = "ID",
+#'   nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+#' )
+#' data$available_strata
 #' @export
 load_vpc_data <- function(
     sim_data,

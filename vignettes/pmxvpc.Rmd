@@ -1,0 +1,177 @@
+---
+title: "Introduction to pmxvpc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to pmxvpc}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+```
+
+```{r setup}
+library(pmxvpc)
+```
+
+A Visual Predictive Check (VPC) compares percentiles of observed
+concentration-time data against the corresponding percentiles from
+simulated replicates of the same design, as a diagnostic for whether a
+pharmacometric model reproduces the variability seen in real data.
+`pmxvpc` builds VPC plots and summary tables from simulated and
+observed datasets, with optional stratification, time binning, and
+prediction/variance correction (pcVPC/pvcVPC).
+
+This vignette walks through the full pipeline using the small
+synthetic datasets shipped with the package, `pmxvpc_sim_example` (20
+simulated replicates for 8 subjects at two dose levels) and
+`pmxvpc_obs_example` (one observed realization per subject).
+
+```{r}
+head(pmxvpc_sim_example)
+head(pmxvpc_obs_example)
+```
+
+## 1. Load and prepare the data
+
+`load_vpc_data()` maps each dataset's columns to the structure the rest
+of the package expects, and identifies which columns are common to
+both datasets (and therefore usable for stratification).
+
+```{r}
+data <- load_vpc_data(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+)
+
+data$available_strata
+```
+
+## 2. Configure stratification
+
+`configure_strata()` chooses which of those common variables to split
+plots and tables by, and optionally maps numeric codes to display
+labels.
+
+```{r}
+strata <- configure_strata(
+  data,
+  eligible_vars = "DOSE",
+  manual_labels = list(DOSE = "100 = Low dose\n300 = High dose")
+)
+```
+
+## 3. Choose plot settings
+
+`vpc_plot_settings()` validates and collects the options that control
+how the plots look and whether a prediction/variance correction is
+applied.
+
+```{r}
+settings <- vpc_plot_settings(
+  strat_vars = "DOSE",
+  log_scale = TRUE
+)
+```
+
+## 4. Generate the plots
+
+```{r}
+plots <- plot_vpc_strata(data, settings)
+plots$plots[["DOSE=100"]]
+```
+
+### Combining stratified plots
+
+`combine_vpc_plots()` arranges every stratum panel into one image,
+with a single shared legend.
+
+```{r}
+combine_vpc_plots(plots)
+```
+
+## 5. Summary tables
+
+`summarise_vpc_data()` gives a per-stratum overview (record counts,
+descriptive statistics); `summarise_vpc_percentiles()` gives the
+simulated and observed percentiles underlying the plot, by stratum and
+time bin.
+
+```{r}
+summarise_vpc_data(data, strat_vars = "DOSE")
+summarise_vpc_percentiles(data, strat_vars = "DOSE")
+```
+
+## Prediction- and variance-corrected VPCs
+
+When subjects differ in dose (or other covariates), a plain VPC isn't
+always comparable across a bin. Setting `correction = "pc"` rescales
+each record to the bin's typical prediction first; `correction = "pvc"`
+additionally corrects for variability differences between simulated
+replicates. Both require a prediction column (`sim_pred`/`obs_pred`);
+`"pvc"` also requires the simulated replicate column already mapped
+above (`sim_repl`).
+
+```{r}
+data_pred <- load_vpc_data(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  sim_pred = "PRED",
+  obs_pred = "PRED",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+)
+
+settings_pvc <- vpc_plot_settings(strat_vars = "DOSE", correction = "pvc")
+plots_pvc <- plot_vpc_strata(data_pred, settings_pvc)
+plots_pvc$plots[["DOSE=100"]]
+```
+
+See `?vpc_plot_settings` for the full rationale behind `"pc"` and
+`"pvc"`, and Bergstrand et al. (2011)
+[doi:10.1208/s12248-011-9255-z](https://doi.org/10.1208/s12248-011-9255-z)
+for the original method.
+
+## All-in-one: `run_vpc_analysis()`
+
+For a single call that chains every step above (and optionally writes
+plots/tables to disk via `*_save_path` arguments), use
+`run_vpc_analysis()`:
+
+```{r}
+result <- run_vpc_analysis(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24),
+  strat_vars = "DOSE"
+)
+
+result$overview
+```

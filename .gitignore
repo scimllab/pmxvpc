@@ -6,3 +6,6 @@
 .httr-oauth
 .DS_Store
 dev/
+Rplots.pdf
+*.Rcheck/
+*.tar.gz

@@ -46,6 +46,23 @@
 #'   stratum panels (even if that list has only one element, so the
 #'   return type stays consistent once pagination is requested).
 #'   Returned invisibly when \code{save_path} is supplied.
+#'
+#' @examples
+#' data <- load_vpc_data(
+#'   sim_data = pmxvpc_sim_example,
+#'   obs_data = pmxvpc_obs_example,
+#'   sim_time = "TIME",
+#'   sim_endpoint = "DV",
+#'   obs_time = "TIME",
+#'   obs_endpoint = "DV",
+#'   sim_repl = "REP",
+#'   sim_subject = "ID",
+#'   obs_subject = "ID",
+#'   nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+#' )
+#' plots <- plot_vpc_strata(data, vpc_plot_settings(strat_vars = "DOSE"))
+#' combined <- combine_vpc_plots(plots)
+#' combined
 #' @export
 combine_vpc_plots <- function(
     plots,

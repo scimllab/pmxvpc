@@ -1,16 +1,29 @@
 Package: pmxvpc
 Title: Pharmacometrics VPC Plot Generator
 Version: 0.1.0
-Authors@R: person("Pharmacometrician", "Analyst", email = "analyst@enterprise.com", role = c("aut", "cre"))
-Description: PK simulation application with AI component
-License: Proprietary
+Authors@R: person("Jayesh", "Patel", email = "stent41fanfare@icloud.com", role = c("aut", "cre"))
+Description: Generates Visual Predictive Check (VPC) plots for pharmacometric
+    (PK/PD) model diagnostics by comparing simulated and observed
+    concentration-time data. Supports prediction-corrected (pcVPC) and
+    prediction- and variance-corrected (pvcVPC) rescaling, flexible time
+    binning, stratification, and summary tables, following the method of
+    Bergstrand, Hooker, Wallin, and Karlsson (2011)
+    <doi:10.1208/s12248-011-9255-z>.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Depends:
+    R (>= 4.1.0)
 Imports:
     dplyr,
     ggplot2,
     grid,
     patchwork,
     readr,
+    rlang,
     tibble
+Suggests:
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
 Config/roxygen2/version: 8.1.1

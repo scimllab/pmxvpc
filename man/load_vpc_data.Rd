@@ -104,3 +104,18 @@ Reads simulated and observed datasets, maps their columns to the
 expected VPC structure, optionally excludes subjects, prepares
 the datasets, and identifies common stratification variables.
 }
+\examples{
+data <- load_vpc_data(
+  sim_data = pmxvpc_sim_example,
+  obs_data = pmxvpc_obs_example,
+  sim_time = "TIME",
+  sim_endpoint = "DV",
+  obs_time = "TIME",
+  obs_endpoint = "DV",
+  sim_repl = "REP",
+  sim_subject = "ID",
+  obs_subject = "ID",
+  nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+)
+data$available_strata
+}

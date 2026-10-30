@@ -23,6 +23,21 @@
 #'   frame to as CSV (via \code{utils::write.csv()}). NULL (default)
 #'   does not save.
 #'
+#' @examples
+#' data <- load_vpc_data(
+#'   sim_data = pmxvpc_sim_example,
+#'   obs_data = pmxvpc_obs_example,
+#'   sim_time = "TIME",
+#'   sim_endpoint = "DV",
+#'   obs_time = "TIME",
+#'   obs_endpoint = "DV",
+#'   sim_repl = "REP",
+#'   sim_subject = "ID",
+#'   obs_subject = "ID",
+#'   nominal_times = c(0, 1, 2, 4, 8, 12, 24)
+#' )
+#' summarise_vpc_percentiles(data, strat_vars = "DOSE")
+#'
 #' @return A data frame containing stratum values, time bins,
 #'   simulated and observed percentiles, and record counts.
 #' @export

@@ -67,6 +67,23 @@
 #'   when \code{combined_plot_save_path} is supplied (a single plot,
 #'   or a list of plots if \code{plots_per_panel} produces more than
 #'   one page -- see combine_vpc_plots()).
+#'
+#' @examples
+#' result <- run_vpc_analysis(
+#'   sim_data = pmxvpc_sim_example,
+#'   obs_data = pmxvpc_obs_example,
+#'   sim_time = "TIME",
+#'   sim_endpoint = "DV",
+#'   obs_time = "TIME",
+#'   obs_endpoint = "DV",
+#'   sim_repl = "REP",
+#'   sim_subject = "ID",
+#'   obs_subject = "ID",
+#'   nominal_times = c(0, 1, 2, 4, 8, 12, 24),
+#'   strat_vars = "DOSE"
+#' )
+#' result$overview
+#' result$plots$plots[[1]]
 #' @export
 run_vpc_analysis <- function(
     sim_data,

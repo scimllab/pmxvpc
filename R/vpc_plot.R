@@ -1,4 +1,13 @@
-#' vpc plot
+#' Named color palettes for VPC plots
+#'
+#' Built-in color palettes selectable via the \code{palette} argument of
+#' \code{\link{vpc_plot_settings}}. Each entry is a named character
+#' vector of hex colors for the ribbon fill, simulated and observed
+#' series, and observed points.
+#'
+#' @examples
+#' names(vpc_palettes)
+#' vpc_palettes[["Okabe-Ito"]]
 #' @export
 #'
 vpc_palettes <- list(

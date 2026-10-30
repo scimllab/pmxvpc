@@ -2,10 +2,16 @@
 % Please edit documentation in R/vpc_data_processing.R
 \name{default_nominal_times}
 \alias{default_nominal_times}
-\title{vpc data processing}
+\title{Default nominal sampling times}
 \usage{
 default_nominal_times
 }
 \description{
-vpc data processing
+A built-in vector of nominal sampling times, usable as the
+\code{nominal_times} argument to \code{\link{load_vpc_data}} or
+\code{\link{run_vpc_analysis}} when a study-specific schedule isn't
+available.
+}
+\examples{
+default_nominal_times
 }

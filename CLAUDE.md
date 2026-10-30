@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`pmxvpc` is an R package that generates Visual Predictive Check (VPC) plots for pharmacometric (PK/PD) model diagnostics — comparing simulated vs. observed concentration-time data, with optional prediction (pcVPC) and prediction- and variance-corrected (pvcVPC) rescaling. It's consumed by an R Shiny app (this repo lives at `Rshinyapp/pmxvpc`).
+`pmxvpc` is an R package that generates Visual Predictive Check (VPC) plots for pharmacometric (PK/PD) model diagnostics — comparing simulated vs. observed concentration-time data, with optional prediction (pcVPC) and prediction- and variance-corrected (pvcVPC) rescaling. It's consumed by an R Shiny app (this repo lives at `Rshinyapp/pmxvpc`). MIT licensed (`LICENSE`/`LICENSE.md`); see [README.md](README.md) for a usage overview.
 
 ## Commands
 

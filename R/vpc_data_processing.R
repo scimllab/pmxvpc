@@ -1,4 +1,12 @@
-#' vpc data processing
+#' Default nominal sampling times
+#'
+#' A built-in vector of nominal sampling times, usable as the
+#' \code{nominal_times} argument to \code{\link{load_vpc_data}} or
+#' \code{\link{run_vpc_analysis}} when a study-specific schedule isn't
+#' available.
+#'
+#' @examples
+#' default_nominal_times
 #' @export
 default_nominal_times <- c(
   0, 1, 2, 3,
