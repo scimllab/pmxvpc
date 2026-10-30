@@ -20,10 +20,9 @@ summarise_vpc_data(
 Defaults to character(0).}
 
 \item{correction}{VPC correction method: "none" (default), "pc"
-for a prediction-corrected VPC, or "pvc" for a prediction- and
-variance-corrected VPC. Requires prediction columns to be mapped
-via load_vpc_data(); "pvc" also requires a simulated replicate
-column (sim_repl). See vpc_plot_settings() for details.}
+(prediction-corrected), or "pvc" (prediction- and
+variance-corrected). Needs mapped prediction columns; "pvc"
+also needs sim_repl. See vpc_plot_settings() for details.}
 
 \item{pc_method}{Rule used to compute the prediction-corrected
 value: "proportional" (default) or "additive". See
@@ -33,9 +32,8 @@ vpc_plot_settings() for details.}
 reference is computed from: "obs_only" (default) or "pooled".
 See vpc_plot_settings() for details.}
 
-\item{save_path}{Optional file path to save the resulting data
-frame to as CSV (via \code{utils::write.csv()}). NULL (default)
-does not save.}
+\item{save_path}{Optional CSV file path to save the result to
+(via \code{utils::write.csv()}). NULL (default) skips saving.}
 }
 \value{
 A data frame with stratum values, dataset name, record count,

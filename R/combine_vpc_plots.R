@@ -29,7 +29,7 @@
 #'   does not inherit that for the collected legend unless told to,
 #'   so this is applied explicitly. Only affects the result when
 #'   \code{guides = "collect"}.
-#' @param save_path Optional file path to save the combined plot(s) to
+#' @param save_path Optional path to save the combined plot(s) to
 #'   (passed to \code{ggplot2::ggsave()}; the format is inferred from
 #'   the file extension, e.g. ".png" or ".pdf"). NULL (default) does
 #'   not save. When \code{plots_per_panel} produces more than one

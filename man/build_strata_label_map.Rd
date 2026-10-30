@@ -24,7 +24,7 @@ build_strata_label_map(
 to derive labels from, or NULL to skip.}
 
 \item{manual_labels}{Named character vector of manual code-to-label
-overrides, as returned by \code{parse_manual_strata_labels()}.}
+overrides, e.g. \code{c(`1` = "A")}.}
 }
 \value{
 A data frame with \code{code} and \code{label} columns

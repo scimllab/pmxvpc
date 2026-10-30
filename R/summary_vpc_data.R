@@ -8,19 +8,17 @@
 #' @param strat_vars Character vector of stratification variables.
 #'   Defaults to character(0).
 #' @param correction VPC correction method: "none" (default), "pc"
-#'   for a prediction-corrected VPC, or "pvc" for a prediction- and
-#'   variance-corrected VPC. Requires prediction columns to be mapped
-#'   via load_vpc_data(); "pvc" also requires a simulated replicate
-#'   column (sim_repl). See vpc_plot_settings() for details.
+#'   (prediction-corrected), or "pvc" (prediction- and
+#'   variance-corrected). Needs mapped prediction columns; "pvc"
+#'   also needs sim_repl. See vpc_plot_settings() for details.
 #' @param pc_method Rule used to compute the prediction-corrected
 #'   value: "proportional" (default) or "additive". See
 #'   vpc_plot_settings() for details.
 #' @param reference_source Which data the per-bin correction
 #'   reference is computed from: "obs_only" (default) or "pooled".
 #'   See vpc_plot_settings() for details.
-#' @param save_path Optional file path to save the resulting data
-#'   frame to as CSV (via \code{utils::write.csv()}). NULL (default)
-#'   does not save.
+#' @param save_path Optional CSV file path to save the result to
+#'   (via \code{utils::write.csv()}). NULL (default) skips saving.
 #'
 #' @return A data frame with stratum values, dataset name, record count,
 #'   subject count, time-bin count, descriptive statistics, and

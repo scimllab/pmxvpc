@@ -1,8 +1,8 @@
 #' Default nominal sampling times
 #'
-#' A built-in vector of nominal sampling times, usable as the
-#' \code{nominal_times} argument to \code{\link{load_vpc_data}} or
-#' \code{\link{run_vpc_analysis}} when a study-specific schedule isn't
+#' A built-in vector of nominal sampling times, usable as
+#' \code{nominal_times} in \code{\link{load_vpc_data}} or
+#' \code{\link{run_vpc_analysis}} when no study-specific schedule is
 #' available.
 #'
 #' @examples

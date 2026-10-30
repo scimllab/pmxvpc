@@ -15,39 +15,33 @@
 #' @param obs_endpoint Name of the observed endpoint/concentration column.
 #' @param obs_subject Name of the observed subject ID column, or NULL.
 #' @param sim_pred Name of the simulated population prediction
-#'   column (e.g. PRED), or NULL. Required for a prediction-corrected
-#'   ("pc") or prediction- and variance-corrected ("pvc") VPC; if the
-#'   named column is missing from the data it is silently ignored
-#'   (treated as not mapped) unless correction is actually requested,
-#'   in which case plotting/summarizing will raise a clear error.
+#'   column (e.g. PRED), or NULL. Needed for "pc"/"pvc" correction;
+#'   a named-but-missing column is silently ignored unless correction
+#'   is actually requested, in which case a clear error is raised.
 #' @param obs_pred Name of the observed population prediction
-#'   column, or NULL. Required for a prediction-corrected ("pc") or
-#'   prediction- and variance-corrected ("pvc") VPC; missing columns
-#'   are silently ignored as for \code{sim_pred}. A prediction- and
-#'   variance-corrected ("pvc") VPC also requires \code{sim_repl} to
-#'   be mapped, since the variance reference is derived from the
-#'   scatter of prediction-corrected values across simulated
-#'   replicates (there is no separate predicted-variance column).
+#'   column, or NULL. Needed for "pc"/"pvc" correction; missing
+#'   columns are silently ignored as for \code{sim_pred}. "pvc" also
+#'   requires \code{sim_repl}: its variance reference comes from the
+#'   scatter of prediction-corrected values across replicates (no
+#'   separate variance column).
 #' @param sim_time_is_binned Whether simulated time is already binned.
-#' @param time_binning Method used to bin the x-axis (time) variable:
-#'   "explicit_center" (nearest-neighbor assignment to a fixed vector
-#'   of bin centers, \code{nominal_times}), "explicit_bound" (group by
-#'   user-supplied interval boundaries, \code{time_bin_breaks}),
-#'   "kmeans" (automatically derive \code{n_time_bins} bin centers via
-#'   1-dimensional k-means clustering), or "none" (use the actual time
-#'   values, unbinned). Defaults to NULL, which auto-selects for
-#'   backward compatibility: "explicit_center" when \code{nominal_times}
-#'   is supplied, otherwise "none".
-#' @param nominal_times Optional numeric vector of nominal sampling times,
-#'   or a comma-separated string. NULL or "" uses actual time values.
-#'   Used when \code{time_binning = "explicit_center"}.
+#' @param time_binning How to bin the x-axis (time) variable:
+#'   "explicit_center" (nearest-neighbor to fixed bin centers,
+#'   \code{nominal_times}), "explicit_bound" (group by user-supplied
+#'   interval boundaries, \code{time_bin_breaks}), "kmeans" (auto-derive
+#'   \code{n_time_bins} bin centers via 1-D k-means), or "none" (actual
+#'   time values, unbinned). NULL (default) auto-selects:
+#'   "explicit_center" if \code{nominal_times} is given, else "none".
+#' @param nominal_times Optional nominal sampling times (numeric vector
+#'   or comma-separated string). NULL or "" uses actual time values
+#'   (for "explicit_center" binning).
 #' @param time_bin_breaks Optional numeric vector of strictly increasing
-#'   bin boundaries, or a comma-separated string. Required when
-#'   \code{time_binning = "explicit_bound"}.
-#' @param n_time_bins Optional positive integer number of bins. Required
-#'   when \code{time_binning = "kmeans"}.
-#' @param exclude_subjects Optional character vector of subject IDs to
-#'   exclude, or a comma-separated string.
+#'   bin boundaries, or a comma-separated string (required for
+#'   "explicit_bound" binning).
+#' @param n_time_bins Optional positive integer number of bins
+#'   (required for "kmeans" binning).
+#' @param exclude_subjects Optional subject IDs to exclude (character
+#'   vector or a comma-separated string).
 #'
 #' @return A list containing:
 #' \describe{
@@ -57,7 +51,7 @@
 #'   \item{nominal_times}{Nominal times used, or NULL.}
 #'   \item{time_binning}{Time-binning method actually used.}
 #'   \item{bin_centers}{Resolved bin centers for "explicit_center" or
-#'     "kmeans" binning (kmeans-derived, when applicable), or NULL.}
+#'     "kmeans" binning (kmeans-derived if applicable), or NULL.}
 #'   \item{time_bin_breaks}{Parsed bin boundaries for "explicit_bound"
 #'     binning, or NULL.}
 #' }

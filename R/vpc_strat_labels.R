@@ -7,7 +7,7 @@
 #' @param label_source Name of a common character or factor variable
 #'   to derive labels from, or NULL to skip.
 #' @param manual_labels Named character vector of manual code-to-label
-#'   overrides, as returned by \code{parse_manual_strata_labels()}.
+#'   overrides, e.g. \code{c(`1` = "A")}.
 #'
 #' @return A data frame with \code{code} and \code{label} columns
 #'   mapping each stratification code to its display label.

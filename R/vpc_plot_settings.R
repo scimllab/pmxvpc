@@ -62,13 +62,13 @@
 #'   value pcY: "proportional" (default), pcY = Y * bin_pred /
 #'   individual_pred, or "additive", pcY = Y - individual_pred +
 #'   bin_pred. Applies to both "pc" and "pvc".
-#' @param reference_source Which data bin_pred (the per-bin typical
-#'   prediction) is computed from: "obs_only" (default), using only
-#'   observed predictions, or "pooled", using simulated and observed
-#'   predictions combined. Only applies when correction is "pc" or
-#'   "pvc"; for "pvc" the variance reference (bin_var) always uses
-#'   the replicate-based calculation described above, regardless of
-#'   this setting.
+#' @param reference_source Which data bin_pred (the bin's typical
+#'   prediction) is computed from: "obs_only" (default) uses only
+#'   observed predictions; "pooled" uses both simulated and observed
+#'   predictions. Only applies when correction is "pc" or "pvc"; for
+#'   "pvc" the variance reference (bin_var) always uses the
+#'   replicate-based calculation described above, regardless of this
+#'   setting.
 #' @param obs_median_color Observed median line color.
 #' @param sim_median_color Simulated median line color.
 #' @param obs_tail_color Observed percentile line color.

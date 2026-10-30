@@ -13,25 +13,22 @@
 #' @param sim_subject Optional simulated subject ID column.
 #' @param obs_subject Optional observed subject ID column.
 #' @param sim_pred Optional simulated population prediction column.
-#'   Required for a prediction-corrected ("pc") or prediction- and
-#'   variance-corrected ("pvc") VPC; see \code{plot_settings}. If the
-#'   named column is missing from the data it is silently ignored
-#'   unless correction is actually requested.
+#'   Needed for "pc"/"pvc" correction; see \code{plot_settings}. A
+#'   named-but-missing column is silently ignored unless correction
+#'   is actually requested.
 #' @param obs_pred Optional observed population prediction column.
-#'   Missing columns are silently ignored as for \code{sim_pred}. A
-#'   prediction- and variance-corrected ("pvc") VPC also requires
-#'   \code{sim_repl} to be mapped, since the variance reference is
-#'   derived from the scatter of prediction-corrected values across
-#'   simulated replicates.
+#'   Missing columns are silently ignored as for \code{sim_pred}.
+#'   "pvc" also requires \code{sim_repl}, since its variance
+#'   reference comes from the scatter of prediction-corrected values
+#'   across simulated replicates.
 #' @param sim_time_is_binned Whether simulated time is already binned.
 #' @param time_binning Time-binning method: "explicit_center",
-#'   "explicit_bound", "kmeans", or "none". See load_vpc_data() for
-#'   details; NULL auto-selects based on \code{nominal_times}.
+#'   "explicit_bound", "kmeans", or "none" (see load_vpc_data());
+#'   NULL auto-selects based on \code{nominal_times}.
 #' @param nominal_times Optional nominal sampling times.
-#' @param time_bin_breaks Optional explicit bin boundaries, used when
-#'   \code{time_binning = "explicit_bound"}.
-#' @param n_time_bins Optional number of bins, used when
-#'   \code{time_binning = "kmeans"}.
+#' @param time_bin_breaks Optional explicit bin boundaries (for
+#'   "explicit_bound" binning).
+#' @param n_time_bins Optional number of bins (for "kmeans" binning).
 #' @param exclude_subjects Optional subject IDs to exclude.
 #' @param strat_vars Variables eligible for stratification and plotting.
 #' @param label_sources Optional named list of label-source variables.
@@ -50,10 +47,10 @@
 #'   a combined plot. Ignored when \code{make_plots = FALSE}. When
 #'   \code{plots_per_panel} causes more than one page, each page is
 #'   saved with "_page<N>" inserted before the file extension.
-#' @param plots_per_panel Maximum number of stratum panels per
-#'   combined plot, passed to combine_vpc_plots(). NULL (default)
-#'   puts every panel on one combined plot. Only applies when
-#'   \code{combined_plot_save_path} is supplied.
+#' @param plots_per_panel Maximum stratum panels per combined plot,
+#'   passed to combine_vpc_plots(). NULL (default) puts every panel
+#'   on one plot; only relevant when saving a combined plot (see
+#'   above).
 #'
 #' @references
 #' Bergstrand M, Hooker AC, Wallin JE, Karlsson MO. Prediction-corrected
@@ -61,12 +58,11 @@
 #' models. \emph{AAPS J}. 2011;13(2):143-151.
 #' \doi{10.1208/s12248-011-9255-z}
 #'
-#' @return An object of class "vpc_analysis", containing prepared
-#'   data, stratification configuration, plot settings, plots,
-#'   overview, and percentile summaries, plus a combined_plot entry
-#'   when \code{combined_plot_save_path} is supplied (a single plot,
-#'   or a list of plots if \code{plots_per_panel} produces more than
-#'   one page -- see combine_vpc_plots()).
+#' @return An object of class "vpc_analysis" containing prepared
+#'   data, stratification, plot settings, plots, and summaries, plus
+#'   \code{combined_plot} when \code{combined_plot_save_path} is
+#'   supplied (a single plot, or a list if \code{plots_per_panel}
+#'   paginates -- see combine_vpc_plots()).
 #'
 #' @examples
 #' result <- run_vpc_analysis(
